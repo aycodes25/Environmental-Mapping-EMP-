@@ -757,3 +757,27 @@ export async function verifyTwoFactorToken(secret: string, token: string): Promi
     return verified;
 }
 
+
+export async function seedSuperAdmin() {
+    try {
+        const superAdminData = {
+            username: 'superadmin',
+            fullname: 'Super Admin',
+            password: 'superadmin',
+            email: 'superadmin',
+            role: RoleType.superAdmin,
+            isVerified: true,
+        };
+        const existingSuperAdmin = await userModel.findOne({ role: RoleType.superAdmin });
+        if (existingSuperAdmin) {
+            console.log("super admin already exists, password, username and email are superadmin")
+            return
+        }
+        superAdminData.password = await hashPassword(superAdminData.password);
+        const newSuperAdmin = new userModel(superAdminData);
+        await newSuperAdmin.save();
+        console.log("super admin created, password, username and email is superadmin")
+    } catch (error) {
+        console.error('Error seeding SuperAdmin:', error);
+    }
+}

@@ -8,6 +8,7 @@ import { ErrorMiddleWare } from "./middlewares/error.middleware";
 import { Error404Middleware } from "./middlewares/error-404.middlewares";
 import debug from "debug";
 import dotenv from "dotenv";
+import { seedSuperAdmin } from "./resources/users/user.services";
 
 dotenv.config();
 export class App {
@@ -64,17 +65,20 @@ export class App {
         const { MONGO_URL } = process.env;
         const connectDB = async () => {
             try {
-              await mongoose.connect(`${MONGO_URL}`, {
-                serverSelectionTimeoutMS: 5000,
-              });
-              console.log('Connected to MongoDB');
+                await mongoose.connect(`${MONGO_URL}`, {
+                    serverSelectionTimeoutMS: 5000,
+                });
+                console.log('Connected to MongoDB');
+                if (process.env.NODE_ENV === "development") {
+                    seedSuperAdmin() // no need to call endpoint
+                }
             } catch (error) {
-              console.error('Initial connection error:', error);
-              setTimeout(connectDB, 5000);
+                console.error('Initial connection error:', error);
+                setTimeout(connectDB, 5000);
             }
-          };
-          
-          connectDB();
+        };
+
+        connectDB();
     }
 
     public listen(): void {
