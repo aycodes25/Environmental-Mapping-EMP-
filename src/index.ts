@@ -1,27 +1,28 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import app from './app'; // Import the app configuration
+import "dotenv/config";
+import { App } from "./app";
+import { UserRoute } from "./resources/users/user.routes";
+import { ModelRoute } from "./resources/models/model.routes";
+import { TagsRoute } from "./resources/tags/tags.router";
+import { CommentRoutes } from "./resources/comments/comments.routes";
+import { SampleRoutes } from "./resources/sample/sample.routes";
+import { LocationRoutes } from "./resources/locations/locations.routes";
+import { Granular } from "./resources/granular/granular.routes";
+import { IncidentRoutes } from "./resources/incident/incident.routes";
+import { FilesRoute } from "./resources/localfile/localfile.router";
+const app = new App(
+    [
+        new UserRoute(),
+        new ModelRoute(),
+        new TagsRoute(),
+        new CommentRoutes(),
+        new SampleRoutes(),
+        new LocationRoutes(),
+        new Granular(),
+        new IncidentRoutes(),
+        new FilesRoute()
+    ],
+    Number(process.env.PORT)
+)
 
-// Load environment variables
-dotenv.config();
 
-// Connect to MongoDB
-async function connectToDatabase() {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI!, {});
-    console.log('MongoDB connected successfully');
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    process.exit(1); // Exit the process if DB connection fails
-  }
-}
-
-// Call the function to connect to the database
-connectToDatabase();
-
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen();
