@@ -75,24 +75,24 @@ export const signUpAdmin = async (
         // await sendVerifyEmail(user.email, verificationToken)
         return { user };
 
-    } catch (err:any) {
+    } catch (err: any) {
         if (err instanceof mongoose.Error.ValidationError) {
-          throw new Error( 'Validation error');
+            throw new Error('Validation error');
         } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-            throw new Error( 'Document not found');
+            throw new Error('Document not found');
         } else if (err instanceof Error && (err as any).code === 11000) {
-          const keyPattern = (err as any).keyPattern;
-          if (keyPattern.username) {
-            throw new Error( 'Username already exists');
-          } else if (keyPattern.email) {
-            throw new Error( 'Email already exists');
-          } else {
-            throw new Error( 'Duplicate key error');
-          }
+            const keyPattern = (err as any).keyPattern;
+            if (keyPattern.username) {
+                throw new Error('Username already exists');
+            } else if (keyPattern.email) {
+                throw new Error('Email already exists');
+            } else {
+                throw new Error('Duplicate key error');
+            }
         } else {
-        throw new Error( `Server error: ${err.message}`);
+            throw new Error(`Server error: ${err.message}`);
         }
-      }
+    }
 }
 export const Login = async (
     email: string,
@@ -130,7 +130,7 @@ export const Login = async (
 
 
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
 
     }
 }
@@ -151,15 +151,15 @@ export const signUpTagger = async (
         // password = password.toLowerCase();
 
         // Check if email already exists
-        const emailAlreadyExists = await UserSchema.findOne({ email:email });
+        const emailAlreadyExists = await UserSchema.findOne({ email: email });
         if (emailAlreadyExists) {
-            throw new Error( "Email has been taken!");
+            throw new Error("Email has been taken!");
         }
 
         // Check if username already exists
-        const usernameAlreadyExists = await UserSchema.findOne({ username:username });
+        const usernameAlreadyExists = await UserSchema.findOne({ username: username });
         if (usernameAlreadyExists) {
-            throw new Error( "Username has been taken!");
+            throw new Error("Username has been taken!");
         }
 
         const locations = await locationsModels.findById(location)
@@ -185,24 +185,24 @@ export const signUpTagger = async (
         // await sendVerifyEmail(user.email, verificationToken)
         return user;
 
-    } catch (err:any) {
+    } catch (err: any) {
         if (err instanceof mongoose.Error.ValidationError) {
-          throw new Error( 'Validation error');
+            throw new Error('Validation error');
         } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-            throw new Error( 'Document not found');
+            throw new Error('Document not found');
         } else if (err instanceof Error && (err as any).code === 11000) {
-          const keyPattern = (err as any).keyPattern;
-          if (keyPattern.username) {
-            throw new Error('Username already exists');
-          } else if (keyPattern.email) {
-            throw new Error('Email already exists');
-          } else {
-            throw new Error('Duplicate key error');
-          }
+            const keyPattern = (err as any).keyPattern;
+            if (keyPattern.username) {
+                throw new Error('Username already exists');
+            } else if (keyPattern.email) {
+                throw new Error('Email already exists');
+            } else {
+                throw new Error('Duplicate key error');
+            }
         } else {
-        throw new Error(`Server error: ${err.message}`);
+            throw new Error(`Server error: ${err.message}`);
         }
-      }
+    }
 }
 export const updatePassword = async (
     email: string,
@@ -211,7 +211,7 @@ export const updatePassword = async (
     try {
         const user = await UserSchema.findOne({ email });
         if (!user) {
-            throw new Error( "this email is invalid")
+            throw new Error("this email is invalid")
         }
         const HashPassword = await hashPassword(password);
 
@@ -259,11 +259,11 @@ export const getAUser = async (
     try {
         const user = await userModel.findOne({ _id: id }).populate("locations");
         if (!user) {
-            throw new Error( "user not found")
+            throw new Error("user not found")
         }
         return user
     } catch (error: any) {
-       throw new Error( `Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 
@@ -274,7 +274,7 @@ export const getUsers = async (
         const user = await userModel.findById(userId).exec();
 
         if (!user) {
-            throw new Error( "user not found")
+            throw new Error("user not found")
         }
 
         let users;
@@ -294,7 +294,7 @@ export const getUsers = async (
         return { users, totalUsers };
 
     } catch (error: any) {
-       throw new Error( `Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 
@@ -309,42 +309,50 @@ export const userUpdate = async (
         if (userData?.location?.valueOf()) {
             const locations = await locationsModels.findById(userData?.location?.valueOf())
             if (!locations) {
-               throw new Error( "Location doesn't exist!")
-
+                throw new Error("Location doesn't exist!")
             }
         }
+
+        // allow changing other values
+        // TO-DO - fix this, fetch user and see if these deleted fields
+        // changed or not, if changed change else delete to allow edit to
+        // complete
+        delete (userData.username)
+        delete (userData.email)
 
         const users = await userModel.findByIdAndUpdate(
             { _id: userId },
             userData,
             { new: true } // Return the updated document
         )
+
         return users
-    } catch (err:any) {
+    } catch (err: any) {
+        console.log(err)
         if (err instanceof mongoose.Error.ValidationError) {
-          throw new Error( 'Validation error');
+            throw new Error('Validation error');
         } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-            throw new Error( 'Document not found');
+            throw new Error('Document not found');
         } else if (err instanceof Error && (err as any).code === 11000) {
-          const keyPattern = (err as any).keyPattern;
-          if (keyPattern.username) {
-            throw new Error( 'Username already exists');
-          } else if (keyPattern.email) {
-            throw new Error( 'Email already exists');
-          } else {
-            throw new Error( 'Duplicate key error');
-          }
+            const keyPattern = (err as any).keyPattern;
+            if (keyPattern.username) {
+                throw new Error('Username already exists');
+            } else if (keyPattern.email) {
+                throw new Error('Email already exists');
+            } else {
+                throw new Error('Duplicate key error');
+            }
         } else {
-        throw new Error( `Server error: ${err.message}`);
+            throw new Error(`Server error: ${err.message}`);
         }
-      }
     }
+}
 export const getTotalUsers = async (): Promise<any> => {
     try {
         const totalUsers = await userModel.countDocuments();
         return totalUsers
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const getDeletedUsers = async (): Promise<any> => {
@@ -352,14 +360,14 @@ export const getDeletedUsers = async (): Promise<any> => {
         const totalUsers = await userModel.countDocuments();
         return totalUsers
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const deleteUsers = async (id: string): Promise<any> => {
     try {
         await userModel.findByIdAndDelete({ _id: id })
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 /**@function sends two factor verificaion email
@@ -370,8 +378,8 @@ export const setTwoFAVerification = async (email: string): Promise<any> => {
     try {
         // Find the user by email
         const user = await userModel.findOne({ email });
-          if (!user) {
-            throw new Error( "user not found")
+        if (!user) {
+            throw new Error("user not found")
         }
 
         const twoFASecret = await generateTwoFactorSecret();
@@ -379,7 +387,7 @@ export const setTwoFAVerification = async (email: string): Promise<any> => {
         user.save();
         return twoFASecret;
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const sendResetVerification = async (email: string): Promise<any> => {
@@ -387,7 +395,7 @@ export const sendResetVerification = async (email: string): Promise<any> => {
 
         // Find the user by email
         const user = await userModel.findOne({ email });
-          if (!user) {
+        if (!user) {
             throw new Error("user not found")
         }
 
@@ -397,7 +405,7 @@ export const sendResetVerification = async (email: string): Promise<any> => {
         await sendResetPasswordEmail(user.email, verificationToken);
 
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 /**
@@ -438,7 +446,7 @@ export const verify2FAToken = async (email: string, token: string): Promise<any>
         }
 
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const verifyResetToken = async (newPassword: string, token: string): Promise<any> => {
@@ -446,7 +454,7 @@ export const verifyResetToken = async (newPassword: string, token: string): Prom
         const user = await resetPassword(token, newPassword);
         return user;
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const recentTaggers = async (): Promise<any> => {
@@ -455,7 +463,7 @@ export const recentTaggers = async (): Promise<any> => {
         return recentTaggers;
 
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const totalTaggers = async (userId: string): Promise<any> => {
@@ -479,7 +487,7 @@ export const totalTaggers = async (userId: string): Promise<any> => {
 
         return totalTaggers;
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const totalReviewers = async (userId: string): Promise<any> => {
@@ -503,7 +511,7 @@ export const totalReviewers = async (userId: string): Promise<any> => {
 
         return totalReviewers;
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 export const recentReviewers = async (): Promise<any> => {
@@ -512,7 +520,7 @@ export const recentReviewers = async (): Promise<any> => {
         return recentReviewers;
 
     } catch (error: any) {
-       throw new Error(`Server error: ${error.message}`);
+        throw new Error(`Server error: ${error.message}`);
     }
 }
 
@@ -525,7 +533,7 @@ export const recentReviewers = async (): Promise<any> => {
 export async function updatePasswordRelativity(userId: any, newPassword: string): Promise<any> {
     const user = await userModel.findById(userId);
     if (!user) {
-        throw new Error( "user not found")
+        throw new Error("user not found")
     }
     const password = await hashPassword(newPassword);
     const resetUser = await userModel.findByIdAndUpdate(userId,
@@ -537,7 +545,7 @@ export async function updatePasswordRelativity(userId: any, newPassword: string)
 export async function verifyEmailRelativity(userId: any): Promise<any> {
     const user = await userModel.findById(userId);
     if (!user) {
-        throw new Error( "user not found")
+        throw new Error("user not found")
     }
     const isEmailVerified = true;
     await userModel.findByIdAndUpdate(userId,
@@ -557,9 +565,9 @@ export async function comparePasswords(
 }
 
 export async function hashPassword(password: string) {
-        const salt =  await bcrypt.genSalt(10); 
-        const hashedPassword = await bcrypt.hash(password, salt); 
-        return hashedPassword; 
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    return hashedPassword;
 }
 
 export async function findOneByUsername(username: string): Promise<User | null | undefined> {
@@ -645,7 +653,7 @@ export async function login({
         const user_without_password = await findOneByUsername(username);
         return { user: user_without_password, accessToken: token };
     } else {
-       throw new Error( 'Invalid credentials');
+        throw new Error('Invalid credentials');
     }
 }
 
@@ -654,7 +662,7 @@ export async function register(createUserDto: any): Promise<any> {
         createUserDto.username,
     );
     if (existingUser) {
-       throw new Error( 'Username is already taken');
+        throw new Error('Username is already taken');
     }
     const user = await create(createUserDto);
     return user;
@@ -670,21 +678,22 @@ export async function verifyEmail(token: string): Promise<any> {
         const userId = decodedToken.userId;
         await verifyEmailRelativity(userId);
     } catch (error) {
-       throw new Error('Invalid or expired verification token');
+        throw new Error('Invalid or expired verification token');
     }
 }
 
 
 export async function requestPasswordReset(email: string): Promise<any> {
     try {
-    const user = await findOneByEmail(email);
-    if (!user) {
-       throw new Error("User not found");
+        const user = await findOneByEmail(email);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        const resetToken = await generateResetPasswordToken(user?._id as unknown as string);
+        sendResetPasswordEmail(user.email, resetToken);
     }
-    const resetToken = await generateResetPasswordToken(user?._id as unknown as string);
-    sendResetPasswordEmail(user.email, resetToken);}
     catch (error: any) {
-       throw new Error(error?.message);
+        throw new Error(error?.message);
     }
 }
 
@@ -698,14 +707,14 @@ export async function resetPassword(token: string, password: string): Promise<an
         );
 
         if (decodedToken.exp && Date.now() >= decodedToken.exp * 1000) {
-           throw new Error('Reset password token has expired');
+            throw new Error('Reset password token has expired');
         }
 
         const userId = decodedToken.sub;
         await updatePasswordRelativity(userId, password);
     } catch (error) {
         console.log(error)
-         throw new Error('Invalid or expired reset password token');
+        throw new Error('Invalid or expired reset password token');
     }
 }
 

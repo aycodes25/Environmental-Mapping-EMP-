@@ -179,11 +179,10 @@ export class UserController {
             const id = req.params.id;
             const { username, email, role, fullname, location } = req.body
             const files = req.files;
-            const userId = req.user?.userId
-            if (!userId) {
+            if (!id) {
                 throw new HttpException(400, 'User ID not found in request');
             }
-            const user = await userService.getAUser(userId);
+            const user = await userService.getAUser(id);
             let data
             // Check if a file was sent
             if (files && typeof files === 'object' && files !== null && 'image' in files) {
@@ -203,10 +202,10 @@ export class UserController {
                         return UploadUserToS3(imageData, imageKey)
                     })()
 
-                    data = await userService.userUpdate(userId, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, imageUrl, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location })
+                    data = await userService.userUpdate(id, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, imageUrl, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location })
                 }
             } else {
-                data = await userService.userUpdate(userId, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location })
+                data = await userService.userUpdate(id, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location })
             }
             res.json({
                 status: "success",
