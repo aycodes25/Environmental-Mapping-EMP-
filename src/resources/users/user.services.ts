@@ -304,7 +304,7 @@ export const userUpdate = async (
 ): Promise<any> => {
     try {
         if (userData.password) {
-            delete userData.password
+            userData.password = await hashPassword(userData.password)
         }
         if (userData?.location?.valueOf()) {
             const locations = await locationsModels.findById(userData?.location?.valueOf())
