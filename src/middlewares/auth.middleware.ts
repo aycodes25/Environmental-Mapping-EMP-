@@ -23,8 +23,8 @@ export const authenticateUser = (req: AuthUserRequest, res: Response, next: Next
     if (authHeader && authHeader.startsWith('Bearer')) {
         const [bearer, token] = authHeader.split(' ');
 
-        if (!token.length) {
-            return res.status(401).json({ message:'Authenticated users only'});
+        if (!token || !token.length) {
+            return res.status(401).json({ message: 'Authenticated users only' });
         }
         try {
             const decodedToken = jwt.verify(token, JWT_SECRET) as JwtPayload;
@@ -32,12 +32,12 @@ export const authenticateUser = (req: AuthUserRequest, res: Response, next: Next
             // Attach the user information to the request object
             req.user = { username, userId, role } as AuthenticatedUser;
             if (!decodedToken) {
-                return res.status(401).json({ message:'Authentication invalid, Please login again, if 2FA is enabled verify your 2FA'});
+                return res.status(401).json({ message: 'Authentication invalid, Please login again, if 2FA is enabled verify your 2FA' });
             };
             next();
         } catch (error) {
             console.log(error)
-            return res.status(401).json({ message:'Please login again'});
+            return res.status(401).json({ message: 'Please login again' });
         }
     } else {
         throw new Error('Please login again');
@@ -52,11 +52,11 @@ export const authenticateUserCheckForAuthorizeTaggers = (req: AuthUserRequest, r
         const [bearer, token] = authHeader.split(' ');
 
         if (!token.length) {
-             return res.status(401).json({ message: 'Authenticated users only'});
+            return res.status(401).json({ message: 'Authenticated users only' });
         }
         try {
             const decodedToken = jwt.verify(token, JWT_SECRET) as JwtPayload;
-            if (!decodedToken) {  return res.status(401).json({ message: 'Authentication invalid, Please login again, if 2FA is enabled verify your 2FA'}) };
+            if (!decodedToken) { return res.status(401).json({ message: 'Authentication invalid, Please login again, if 2FA is enabled verify your 2FA' }) };
 
             const { username, userId, role } = decodedToken;
             // Attach the user information to the request object
@@ -64,10 +64,10 @@ export const authenticateUserCheckForAuthorizeTaggers = (req: AuthUserRequest, r
 
             req;
         } catch (error) {
-             return res.status(401).json({ message: 'Please login again'});
+            return res.status(401).json({ message: 'Please login again' });
         }
     } else {
-         return res.status(401).json({ message: 'Authenticated users only, Please login'});
+        return res.status(401).json({ message: 'Authenticated users only, Please login' });
     }
 
 
@@ -75,17 +75,17 @@ export const authenticateUserCheckForAuthorizeTaggers = (req: AuthUserRequest, r
 export const authorizeTaggersOrSuperAdmins = (req: Request, res: Response, next: NextFunction) => {
     try {
         // Check if the user is authenticated
-        const authReq:any = authenticateUserCheckForAuthorizeTaggers(req, res);
+        const authReq: any = authenticateUserCheckForAuthorizeTaggers(req, res);
 
         if (!authReq.user) {
-            return res.status(401).json({ message:'Authentication required, Please login and enable 2FA authentication'});
+            return res.status(401).json({ message: 'Authentication required, Please login and enable 2FA authentication' });
         }
         // Extract user role from the JWT payload
         const { role } = authReq.user;
 
         // Check if the user has the required role (Tagger or SuperAdmin)
         if (role !== RoleType.tagger || !['superAdmin', 'admin'].includes(role)) {
-            return res.status(401).json({ message:'Unauthorized to access this route'});
+            return res.status(401).json({ message: 'Unauthorized to access this route' });
         }
 
         next();
