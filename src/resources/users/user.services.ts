@@ -313,12 +313,25 @@ export const userUpdate = async (
             }
         }
 
-        // allow changing other values
-        // TO-DO - fix this, fetch user and see if these deleted fields
-        // changed or not, if changed change else delete to allow edit to
-        // complete
-        delete (userData.username)
-        delete (userData.email)
+        let user = await userModel.findById(userId)
+
+        if (userData.username && user?.username !== userData.username) {
+            let userWithUserName = await userModel.findOne({ username: userData.username })
+            if (userWithUserName) {
+                throw new Error(`User with username ${userData.username} exist!`)
+            }
+        } else {
+            delete userData.username
+        }
+
+        if (userData.email && user?.email !== userData.email) {
+            let userWithEmail = await userModel.findOne({ email: userData.email })
+            if (userWithEmail) {
+                throw new Error(`User with email ${userData.email} exist!`)
+            }
+        } else {
+            delete userData.email
+        }
 
         const users = await userModel.findByIdAndUpdate(
             { _id: userId },
