@@ -7,19 +7,19 @@ const TagsSchema = new Schema({
         require: true,
     },
     incident: {
-        type: Schema.Types.ObjectId,
-        ref: 'Incident',
-        required: [false, 'Please provide review text'],
+        type: String,
+        required: false,
     },
     evidence: { type: String, require: false },
     action: { type: String, },
     locations: { type: String, required: [false, 'Please provide location'] },
-    presence: { type: String, 
-        enum: ['positive', 'negative'], 
-        required: false },
+    presence: {
+        type: String,
+        enum: ['positive', 'negative'],
+        required: false
+    },
     sample: {
-        type: Schema.Types.ObjectId,
-        ref: 'Sample',
+        type: String,
         required: false,
     },
     user: {
@@ -42,7 +42,7 @@ const TagsSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ['safety', 'incident', 'sampling'], 
+        enum: ['safety', 'incident', 'sampling'],
         required: false
     },
     slug: {

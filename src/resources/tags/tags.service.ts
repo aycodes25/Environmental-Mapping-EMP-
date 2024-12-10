@@ -29,7 +29,6 @@ export const addTags = async (
         let evidenceKey;
         let evidenceUrl;
 
-        let sampleModelRetrieved
         let tagData
         let Tag
 
@@ -62,21 +61,12 @@ export const addTags = async (
             })()
         }
 
-        // TO-DO - previous implementation expects a fixed preuploaded incidence and sample types
-        // if (type === "sampling" && sample) {
-        //     sampleModelRetrieved = await sampleModel.findOne({ _id: sample })
-        // }
-        // if (type === "incident" && incident) {
-        //     incidentModelRetrieve = await incidentModel.findOne({ _id: incident })
-        // }
-
-        // TO-DO: are there pre-populated sample types?
         if (type === "sampling") {
             tagData = {
                 objectName,
                 evidence: evidenceUrl,
                 action,
-                sample: sampleModelRetrieved || null,
+                sample,
                 locations,
                 user: User,
                 model: Model,
@@ -89,7 +79,7 @@ export const addTags = async (
         }
         if (type === "incident") {
             tagData = {
-                incident: incidentModelRetrieve || null, // TO-DO - are there prepopulated incidence types?
+                incident,
                 objectName,
                 evidence: evidenceUrl,
                 action,

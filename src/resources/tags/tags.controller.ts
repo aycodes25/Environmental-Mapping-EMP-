@@ -124,7 +124,7 @@ export class TagController {
             const user = await userModel.findById(userId).exec();
 
             if (!user) {
-                return res.status(400).send({error: 'User not found'});
+                return res.status(400).send({ error: 'User not found' });
             }
 
 
@@ -147,13 +147,13 @@ export class TagController {
 
                 // If user is not a super admin, filter tags based on user's allowed locations
                 const tags = await tagModel.find()
-                    .populate({ path: 'user', select:'locations email username' })
+                    .populate({ path: 'user', select: 'locations email username' })
                     .populate({ path: 'sample' })
                     .populate({ path: 'model', populate: [{ path: 'location' }, { path: 'comments' }] })
                     .sort({ createdAt: -1 });
                 res.status(200).json({
                     message: 'Filtered tags based on user\'s allowed locations',
-                    data: [...tags.filter((i:any)=> i.user?.locations?.valueOf() === user?.locations?.valueOf())],
+                    data: [...tags.filter((i: any) => i.user?.locations?.valueOf() === user?.locations?.valueOf())],
                     status: "success",
                 });
             }
