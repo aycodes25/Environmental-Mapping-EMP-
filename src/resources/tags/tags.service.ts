@@ -1,9 +1,6 @@
-import incidentModel, { Incident } from './../incident/incident.model';
 import moment from "moment";
 import { saveToDisk, UploadEvidenceToS3 } from "../../utils/aws/aws";
 import modelModel from "../models/model.model"
-// import Sample from "../sample/sample.interface"
-import sampleModel from "../sample/sample.model"
 import userModel from "../users/user.model"
 import tagsModel from "./tags.model"
 import { Types } from "mongoose"
@@ -32,7 +29,6 @@ export const addTags = async (
         let tagData
         let Tag
 
-        let incidentModelRetrieve
         // Generate a unique 4-digit slug
         let slug = "";
         if (type === "sampling") {
@@ -72,7 +68,7 @@ export const addTags = async (
                 model: Model,
                 taggedInfo,
                 text,
-                presence,
+                presence: presence || "negative",
                 type,
                 slug
             }
@@ -107,17 +103,8 @@ export const addTags = async (
             }
         }
 
-        console.log("tag data ->", tagData)
 
         Tag = await tagsModel.create(tagData);
-
-        console.log("in db -> ", Tag)
-
-        // TO-DO - because of the above
-        // if (sampleModelRetrieved) {
-        //     sampleModelRetrieved.tags.push((await Tag)._id);
-        //     await sampleModelRetrieved.save();
-        // }
 
         Model?.tags.push((await Tag)._id)
 
