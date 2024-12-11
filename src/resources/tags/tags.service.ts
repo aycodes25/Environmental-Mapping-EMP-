@@ -1,9 +1,6 @@
-import incidentModel, { Incident } from './../incident/incident.model';
 import moment from "moment";
 import { saveToDisk, UploadEvidenceToS3 } from "../../utils/aws/aws";
 import modelModel from "../models/model.model"
-// import Sample from "../sample/sample.interface"
-import sampleModel from "../sample/sample.model"
 import userModel from "../users/user.model"
 import tagsModel from "./tags.model"
 import { Types } from "mongoose"
@@ -29,11 +26,9 @@ export const addTags = async (
         let evidenceKey;
         let evidenceUrl;
 
-        let sampleModelRetrieved
         let tagData
         let Tag
 
-        let incidentModelRetrieve
         // Generate a unique 4-digit slug
         let slug = "";
         if (type === "sampling") {
@@ -62,34 +57,25 @@ export const addTags = async (
             })()
         }
 
-        // TO-DO - previous implementation expects a fixed preuploaded incidence and sample types
-        // if (type === "sampling" && sample) {
-        //     sampleModelRetrieved = await sampleModel.findOne({ _id: sample })
-        // }
-        // if (type === "incident" && incident) {
-        //     incidentModelRetrieve = await incidentModel.findOne({ _id: incident })
-        // }
-
-        // TO-DO: are there pre-populated sample types?
         if (type === "sampling") {
             tagData = {
                 objectName,
                 evidence: evidenceUrl,
                 action,
-                sample: sampleModelRetrieved || null,
+                sample,
                 locations,
                 user: User,
                 model: Model,
                 taggedInfo,
                 text,
-                presence,
+                presence: presence || "negative",
                 type,
                 slug
             }
         }
         if (type === "incident") {
             tagData = {
-                incident: incidentModelRetrieve || null, // TO-DO - are there prepopulated incidence types?
+                incident,
                 objectName,
                 evidence: evidenceUrl,
                 action,
@@ -117,17 +103,8 @@ export const addTags = async (
             }
         }
 
-        console.log("tag data ->", tagData)
 
         Tag = await tagsModel.create(tagData);
-
-        console.log("in db -> ", Tag)
-
-        // TO-DO - because of the above
-        // if (sampleModelRetrieved) {
-        //     sampleModelRetrieved.tags.push((await Tag)._id);
-        //     await sampleModelRetrieved.save();
-        // }
 
         Model?.tags.push((await Tag)._id)
 

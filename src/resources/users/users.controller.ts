@@ -177,7 +177,7 @@ export class UserController {
     async updateAUser(req: AuthUserRequest, res: Response, next: NextFunction) {
         try {
             const id = req.params.id;
-            const { username, email, role, fullname, location } = req.body
+            const { username, email, role, fullname, location, password } = req.body
             const files = req.files;
             if (!id) {
                 throw new HttpException(400, 'User ID not found in request');
@@ -202,10 +202,10 @@ export class UserController {
                         return UploadUserToS3(imageData, imageKey)
                     })()
 
-                    data = await userService.userUpdate(id, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, imageUrl, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location })
+                    data = await userService.userUpdate(id, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, imageUrl, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location, password })
                 }
             } else {
-                data = await userService.userUpdate(id, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location })
+                data = await userService.userUpdate(id, { username: username ?? user.username, email, role: (user.role === "superAdmin") ? user.role : role ?? user.role, fullname, location: (user.role === "superAdmin") ? user?.locations?.valueOf() : location, password })
             }
             res.json({
                 status: "success",
