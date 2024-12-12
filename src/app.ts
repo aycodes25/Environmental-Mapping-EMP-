@@ -12,17 +12,16 @@ import path from "path";
 import { seedSuperAdmin } from "./resources/users/user.services";
 
 // Load environment-specific .env file
-const envFile = process.env.NODE_ENV 
-  ? `.env.${process.env.NODE_ENV}` 
-  : '.env';
+const envFile = process.env.NODE_ENV
+    ? `.env.${process.env.NODE_ENV}`
+    : '.env';
 
-dotenv.config({ 
-  path: path.resolve(process.cwd(), envFile),
-  override: true 
+dotenv.config({
+    path: path.resolve(process.cwd(), envFile),
+    override: true
 });
 
-export class App
-{
+export class App {
     public app: Application;
 
     public port: number | undefined;
@@ -72,33 +71,34 @@ export class App
         this.app.use(Error404Middleware);
     }
 
- private async initialiseDatabaseConnection(): Promise<void> {
-    const { MONGO_URL, NODE_ENV } = process.env;
-    const connectDB = async () => {
-        try {
-            await mongoose.connect(`${MONGO_URL}`, {
-                serverSelectionTimeoutMS: 5000,
-            });
-            console.log(`Connected to MongoDB (${NODE_ENV} environment)`);
-            
-            
-            if (NODE_ENV === "development") {
-                try {
-                    const superAdmin = await seedSuperAdmin();
-                } catch (error) {
-                    throw new Error("Error during super admin seeding");
-                }
-            } else {
-                throw new Error("Super admin seeding is not allowed in production environment");
-            }
-        } catch (error) {
-            throw error;
-            // setTimeout(connectDB, 5000);
-        }
-    };
+    private async initialiseDatabaseConnection(): Promise<void> {
+        const { MONGO_URL, NODE_ENV } = process.env;
+        console.log(MONGO_URL)
+        const connectDB = async () => {
+            try {
+                await mongoose.connect(`${MONGO_URL}`, {
+                    serverSelectionTimeoutMS: 5000,
+                });
+                console.log(`Connected to MongoDB (${NODE_ENV} environment)`);
 
-    connectDB();
-}
+
+                if (NODE_ENV === "development") {
+                    try {
+                        await seedSuperAdmin();
+                    } catch (error) {
+                        throw new Error("Error during super admin seeding");
+                    }
+                } else {
+                    throw new Error("Super admin seeding is not allowed in production environment");
+                }
+            } catch (error) {
+                throw error;
+                // setTimeout(connectDB, 5000);
+            }
+        };
+
+        connectDB();
+    }
 
     public listen(): void {
         this.server.listen(this.port, () => {
