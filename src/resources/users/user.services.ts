@@ -305,7 +305,10 @@ export const userUpdate = async (
     try {
         if (userData.password) {
             userData.password = await hashPassword(userData.password)
+        } else {
+            delete (userData.password)
         }
+
         if (userData?.location?.valueOf()) {
             const locations = await locationsModels.findById(userData?.location?.valueOf())
             if (!locations) {
@@ -777,19 +780,19 @@ export async function seedSuperAdmin() {
             username: 'superadmin',
             fullname: 'Super Admin',
             password: 'superadmin',
-            email: 'superadmin',
+            email: 'superadmin@mail.com',
             role: RoleType.superAdmin,
             isVerified: true,
         };
         const existingSuperAdmin = await userModel.findOne({ role: RoleType.superAdmin });
         if (existingSuperAdmin) {
-            console.log("super admin already exists, password, username and email are superadmin")
-            return
+            await existingSuperAdmin.updateOne({ email: superAdminData.email })
+        } else {
+            superAdminData.password = await hashPassword(superAdminData.password);
+            const newSuperAdmin = new userModel(superAdminData);
+            await newSuperAdmin.save();
         }
-        superAdminData.password = await hashPassword(superAdminData.password);
-        const newSuperAdmin = new userModel(superAdminData);
-        await newSuperAdmin.save();
-        console.log("super admin created, password, username and email is superadmin")
+        console.log("super admin created, password is superadmin email is superadmin@mail.com")
     } catch (error) {
         console.error('Error seeding SuperAdmin:', error);
     }
