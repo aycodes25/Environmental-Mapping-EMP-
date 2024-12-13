@@ -56,39 +56,11 @@ This command will read the `package.json` file and install the dependencies list
 
 ## Running the Project
 
-### Development Server
-
-To run the project in development mode, use the following command:
-
-Please set your environmental variables appropriately according
-to your operating system, for example in unix like systems with `bash`
-, `Git Bash` and `wsl` in windows
-
-```bash
-NODE_ENV=development PORT=8000 \
-    MONGO_URL=mongodb://localhost:27017/emp \
-    JWT_SECRET_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6 \
-    npm run dev
-```
-
-with `cmd` in windows OS
-
-```
-set NODE_ENV=development
-set PORT=8000
-set MONGO_URL=mongodb://localhost:27017/emp
-set JWT_SECRET_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
-npm run dev
-```
-
-Your `MONGO_URL` will either be similar to the above if you have mongodb running locally on your machine or an atlas URI
-
-This command will start the development server and reload the server whenever you make changes to the source code.
-
-
 ### Environment Variables
 
 Create a `.env` file in the root directory of the project and add the necessary environment variables. Here is an example:
+
+**WARNING: Please set your own MONGO_URL in the .env file**
 
 ```
 NODE_ENV=development
@@ -125,6 +97,19 @@ RESET_PASSWORD_SECRET=eb3028f528786eef8fee1a3a206b7c4b97b1d0e4fa58158e656c98f1ed
 ```
 
 Make sure to replace the values with your actual configuration.
+
+### Development Server
+
+To run the project in development mode, use the following command:
+
+**WARNING AGAIN: Please set your own MONGO_URL in the .env file**
+
+```bash
+    npm run dev
+```
+
+This command will start the development server and reload the server whenever you make changes to the source code.
+
 
 ### Production Server
 

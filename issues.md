@@ -15,12 +15,5 @@
 
 ## Some duplication with s3 interfacing code and the code in general
 
-
-
-### Fixed .env file loading
-- Properly sets NODE_ENV for development environment
-- Enables correct .env file loading
-- Fixed super admin seeding functionality in development mode
-
 ## Feature requests / change
 ## Future bugs to come
