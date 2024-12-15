@@ -11,7 +11,7 @@ import tagsModel from '../tags/tags.model';
 import userModel from './user.model';
 import modelModel from "../models/model.model";
 import { RoleType } from "./user.Interface";
-import { hashPassword } from "./user.services";
+import { hashPassword, seedSuperAdmin } from "./user.services";
 
 export class UserController {
     async signUpAdmin(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -56,23 +56,9 @@ export class UserController {
 
     async seedSuperAdmin(req: Request, res: Response, next: NextFunction) {
         try {
-            const superAdminData = {
-                username: 'superadmin',
-                fullname: 'Super Admin',
-                password: 'superadmin',
-                email: 'superadmin',
-                role: RoleType.superAdmin,
-                isVerified: true,
-            };
-            const existingSuperAdmin = await userModel.findOne({ role: RoleType.superAdmin });
-            if (existingSuperAdmin) {
-                return res.status(400).json({ message: 'SuperAdmin already exists.' });
-            }
-            superAdminData.password = await hashPassword(superAdminData.password);
-            const newSuperAdmin = new userModel(superAdminData);
-            await newSuperAdmin.save();
 
-            res.status(201).json({ message: 'SuperAdmin seeded successfully.', user: newSuperAdmin });
+            await seedSuperAdmin()
+            res.status(201).json({ message: 'SuperAdmin seeded successfully.', user: { email: "superadmin@mail.com", password: "superadmin" } });
         } catch (error) {
             console.error('Error seeding SuperAdmin:', error);
             res.status(500).json({ message: 'An error occurred while seeding SuperAdmin.' });
