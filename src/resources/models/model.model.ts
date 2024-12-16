@@ -9,6 +9,7 @@ const modelSchema = new Schema({
         required: true
     },
     file: { type: String, required: true },
+    size: { type: Number, required: false },
     modelName: { type: String, require: true },
     coverPicture: { type: String },
     twoD: { type: String, required: false },
