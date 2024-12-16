@@ -11,7 +11,7 @@ export class ModelController {
             if (!req.files || Object.keys(req.files).length === 0) {
                 return res.status(400).send({ status: "error", message: 'No files were uploaded.' });
             }
-            const { modelName, description, userId, location } = req.body;
+            const { modelName, description, userId, location, size } = req.body;
             const files = req.files;
             // console.log(files);
 
@@ -42,9 +42,9 @@ export class ModelController {
             const twoDFileName = twoDFile?.originalname
             let data;
             if (typeof files === 'object' && files !== null && 'twoD' in files && Array.isArray(files['twoD'])) {
-                data = await modelService.createModel(modelName, description, userId, modelData, imageData, imageFileName, modelFileName, location, twoDFileData, twoDFileName);
+                data = await modelService.createModel(modelName, description, userId, modelData, size, imageData, imageFileName, modelFileName, location, twoDFileData, twoDFileName);
             } else {
-                data = await modelService.createModel(modelName, description, userId, modelData, imageData, imageFileName, modelFileName, location);
+                data = await modelService.createModel(modelName, description, userId, modelData, size, imageData, imageFileName, modelFileName, location);
             }
             res.json({
                 status: "success",

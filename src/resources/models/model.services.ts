@@ -20,6 +20,7 @@ export const createModel = async (
     description: string,
     userId: string,
     modelFile: any,
+    size: number | undefined,
     imageFile: any,
     imageFileName: any,
     modelFileName: any,
@@ -30,6 +31,7 @@ export const createModel = async (
     try {
         const user = await userModel.findOne({ _id: userId })
         if (!user) { return { error: "user not found" } }
+        if (!size) size = 0
         const modelKey = `models/${user.username}/${modelName}/${modelFileName}`;
         const imageKey = `coverPhoto/${user.username}/${imageFileName}`;
         const twoDimageKey = `twoD/${user.username}/${twoDFileName}`;
@@ -67,6 +69,7 @@ export const createModel = async (
                 slug,
                 modelName,
                 file: modelUrl,
+                size,
                 coverPicture: coverPhotoUrl,
                 user,
                 location: locationModelRetrieved,
@@ -78,6 +81,7 @@ export const createModel = async (
                 slug,
                 modelName,
                 file: modelUrl,
+                size,
                 coverPicture: coverPhotoUrl,
                 user,
                 location: locationModelRetrieved
