@@ -61,6 +61,8 @@ export const signUpAdmin = async (
         }
 
 
+        password = password.trim().toLowerCase()
+        email = email.trim().toLowerCase()
         const HashPassword = await hashPassword(password);
 
         const user = await UserSchema.create({
@@ -103,6 +105,8 @@ export const Login = async (
 
             throw new Error('missing  credentials');
         }
+        password = password.trim().toLowerCase()
+        email = email.trim().toLowerCase()
         const user = await UserSchema.findOne({ email: email }).select('+password').populate("locations");
         // Check if user exists
         if (!user) {
@@ -146,9 +150,9 @@ export const signUpTagger = async (
 ): Promise<any> => {
     try {
         // Convert email and username to lowercase
-        email = email.toLowerCase();
-        username = username.toLowerCase();
-        // password = password.toLowerCase();
+        password = password.trim().toLowerCase()
+        email = email.trim().toLowerCase()
+        username = username.trim().toLowerCase();
 
         // Check if email already exists
         const emailAlreadyExists = await UserSchema.findOne({ email: email });
@@ -170,7 +174,6 @@ export const signUpTagger = async (
         }
 
         const HashPassword = await hashPassword(password);
-        // console.log(HashPassword);
 
         const user = await UserSchema.create({
             username,
@@ -209,6 +212,8 @@ export const updatePassword = async (
     password: string,
 ): Promise<any> => {
     try {
+        password = password.trim().toLowerCase()
+        email = email.trim().toLowerCase()
         const user = await UserSchema.findOne({ email });
         if (!user) {
             throw new Error("this email is invalid")
@@ -223,35 +228,6 @@ export const updatePassword = async (
 
     }
 }
-
-// export const signUpReviewer = async (
-//     email: string,
-//     password: string,
-//     username: string
-// ): Promise<any> => {
-//     try {
-//         const emailAlreadyExists = await UserSchema.findOne({ email });
-//         if (emailAlreadyExists) {
-//             throw new Error("email has been taken")
-//         }
-//         const HashPassword = await hashPassword(password);
-//         const user = await UserSchema.create({
-//             username,
-//             fullname: '',
-//             imgUrl: '',
-//             password: HashPassword,
-//             email,
-//             role: 'reviewer'
-//         });
-
-//         // const verificationToken = await generateVerificationToken(user);
-//         // await sendVerifyEmail(user.email, verificationToken);
-
-//         return user;
-//     } catch (error: any) {
-//        throw new Error( `Server error: ${error.message}`};
-//     }
-// }
 
 export const getAUser = async (
     id: string
@@ -304,7 +280,7 @@ export const userUpdate = async (
 ): Promise<any> => {
     try {
         if (userData.password) {
-            userData.password = await hashPassword(userData.password)
+            userData.password = await hashPassword(userData.password.trim().toLowerCase())
         } else {
             delete (userData.password)
         }
@@ -328,6 +304,7 @@ export const userUpdate = async (
         }
 
         if (userData.email && user?.email !== userData.email) {
+            userData.email = userData.email.trim().toLowerCase()
             let userWithEmail = await userModel.findOne({ email: userData.email })
             if (userWithEmail) {
                 throw new Error(`User with email ${userData.email} exist!`)
@@ -393,6 +370,7 @@ export const deleteUsers = async (id: string): Promise<any> => {
 export const setTwoFAVerification = async (email: string): Promise<any> => {
     try {
         // Find the user by email
+        email = email.trim().toLowerCase()
         const user = await userModel.findOne({ email });
         if (!user) {
             throw new Error("user not found")
@@ -410,11 +388,11 @@ export const sendResetVerification = async (email: string): Promise<any> => {
     try {
 
         // Find the user by email
+        email = email.trim().toLowerCase()
         const user = await userModel.findOne({ email });
         if (!user) {
             throw new Error("user not found")
         }
-
 
         const verificationToken = await generateResetPasswordToken(user._id as unknown as string);
 
@@ -432,6 +410,7 @@ export const sendResetVerification = async (email: string): Promise<any> => {
 export const verify2FAToken = async (email: string, token: string): Promise<any> => {
     try {
 
+        email = email.trim().toLowerCase()
         const user = await userModel.findOne({ email }).select('+twoFactorAuth.secret');
 
         if (!user) {
@@ -467,6 +446,7 @@ export const verify2FAToken = async (email: string, token: string): Promise<any>
 }
 export const verifyResetToken = async (newPassword: string, token: string): Promise<any> => {
     try {
+        newPassword = newPassword.trim().toLowerCase()
         const user = await resetPassword(token, newPassword);
         return user;
     } catch (error: any) {
@@ -540,17 +520,12 @@ export const recentReviewers = async (): Promise<any> => {
     }
 }
 
-// export function updateUsers(id: string, arg1: { username: any; email: any; role: any; fullname: any; }) {
-//     throw new Error('Function not implemented.');
-// }
-
-
-
 export async function updatePasswordRelativity(userId: any, newPassword: string): Promise<any> {
     const user = await userModel.findById(userId);
     if (!user) {
         throw new Error("user not found")
     }
+    newPassword = newPassword.trim().toLowerCase()
     const password = await hashPassword(newPassword);
     const resetUser = await userModel.findByIdAndUpdate(userId,
         { password: password }
@@ -591,6 +566,7 @@ export async function findOneByUsername(username: string): Promise<User | null |
 }
 
 export async function findOneByEmail(email: string): Promise<User | null | undefined> {
+    email = email.trim().toLowerCase()
     return userModel.findOne({ email: email });
 }
 
@@ -663,6 +639,8 @@ export async function login({
     username: string;
     password: string;
 }): Promise<{ user: any; accessToken: string } | any> {
+    username = username.trim().toLowerCase()
+    password = password.trim().toLowerCase()
     const user = await validateUser(username, password);
     if (user) {
         const token = await generateJwtToken(user);
@@ -701,6 +679,7 @@ export async function verifyEmail(token: string): Promise<any> {
 
 export async function requestPasswordReset(email: string): Promise<any> {
     try {
+        email = email.trim().toLowerCase()
         const user = await findOneByEmail(email);
         if (!user) {
             throw new Error("User not found");
