@@ -42,7 +42,7 @@ const TagsSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ['safety', 'incident', 'sampling'],
+        enum: ['incident', 'sampling'],
         required: false
     },
     slug: {
