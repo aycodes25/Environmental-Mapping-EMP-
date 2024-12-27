@@ -870,12 +870,11 @@ export const getTotalModelsPerMonthByLocation = async (locationId: string): Prom
     }
 };
 
-export const updateModels = async (modelName: string, description: string, location: any, coverPicture: any, id: string, twoDFile?: any): Promise<any> => {
+export const updateModels = async (id: string, modelName: string, description: string, location: any, coverPicture: any, twoDFile?: any): Promise<any> => {
     try {
         const result = await modelModel.findByIdAndUpdate(
             id,
             { modelName, description, location, coverPicture, twoDFile },
-            { new: true }
         )
         return result
     } catch (error: any) {
