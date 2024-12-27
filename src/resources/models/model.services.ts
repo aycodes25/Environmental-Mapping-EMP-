@@ -6,6 +6,7 @@ import { endOfToday, startOfDay, startOfToday, subDays } from 'date-fns';
 import locationsModels from "../locations/locations.models";
 import userModel from "../users/user.model";
 import { RoleType } from '../users/user.Interface';
+import tagsModel from '../tags/tags.model';
 
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -269,6 +270,7 @@ export const deleteModel = async (id: string): Promise<any> => {
 
         // Delete the model from the database
         await modelModel.findByIdAndDelete({ _id: id })
+        await tagsModel.deleteMany({ model: id })
 
     } catch (error: any) {
         throw new Error(`Server error: ${error.message}`);
@@ -311,9 +313,12 @@ export const restoreSoftDeletedModels = async (modelIds: any): Promise<any> => {
     }
 
 }
-export const deleteMultipleModels = async (ids: any): Promise<any> => {
+export const deleteMultipleModels = async (ids: string[]): Promise<any> => {
     try {
         const result = await modelModel.deleteMany({ _id: { $in: ids } });
+        await Promise.all(ids.map(async (id) => {
+            await tagsModel.deleteMany({ model: id })
+        }))
         return result;
     } catch (error: any) {
         throw new Error(`Server error: ${error.message}`);
