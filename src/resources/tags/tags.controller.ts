@@ -45,7 +45,7 @@ export class TagController {
 
         try {
             const id = req.params.id
-            const { incident, frequency, locations, sample, userId, modelId, taggedInfo, objectName, text, presence, type } = req.body
+            const { incident, frequency, locations, sample, userId, modelId, taggedInfo, objectName, text, presence, type, action } = req.body
             const files = req.files;
             let imageFile: Express.Multer.File | null = null;
             let fileName;
@@ -57,7 +57,7 @@ export class TagController {
             }
 
             const tag = await tagModel.findByIdAndUpdate(id, {
-                incident, objectName, fileName, frequency, locations, sample, userId, modelId, evidenceFile, taggedInfo, text, presence, type
+                incident, objectName, fileName, frequency, locations, sample, userId, modelId, evidenceFile, taggedInfo, text, presence, type, action
             })
 
             res.status(200).json({

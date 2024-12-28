@@ -39,10 +39,6 @@ export const addTags = async (
             const timestamp = Math.floor(Date.now() / 1000);
             slug = `INC-${timestamp}`;
         }
-        if (type === "safety") {
-            const timestamp = Math.floor(Date.now() / 1000);
-            slug = `SAF-${timestamp}`;
-        }
 
         if (!User || !Model) throw new Error("Invalid User or Model")
 
@@ -88,21 +84,6 @@ export const addTags = async (
                 slug
             }
         }
-        if (type === "safety") {
-            tagData = {
-                objectName,
-                evidence: evidenceUrl,
-                action,
-                locations,
-                user: User,
-                model: Model,
-                taggedInfo,
-                text,
-                type,
-                slug
-            }
-        }
-
 
         Tag = await tagsModel.create(tagData);
 

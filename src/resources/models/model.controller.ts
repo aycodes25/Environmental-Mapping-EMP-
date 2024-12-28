@@ -318,7 +318,7 @@ export class ModelController {
             }
 
             try {
-                model = await modelService.updateModels(modelName, description, location, coverPicture || existingModel.coverPicture, twoD || existingModel.twoD, id);
+                model = await modelService.updateModels(id, modelName, description, location, coverPicture || existingModel.coverPicture, twoD || existingModel.twoD);
             } catch (error: any) {
                 return res.status(500).json({ status: "error", message: "Failed to update model", error: error.message });
             }
