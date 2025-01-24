@@ -45,6 +45,10 @@ const TagsSchema = new Schema({
         enum: ['incident', 'sampling'],
         required: false
     },
+    group: {
+        type: String,
+        required: false
+    },
     slug: {
         type: String,
         required: false

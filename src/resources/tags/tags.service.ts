@@ -18,7 +18,8 @@ export const addTags = async (
     taggedInfo: string,
     text: string,
     presence: string,
-    type: string
+    type: string,
+    group: string
 ): Promise<any> => {
     try {
         const Model = await modelModel.findById(modelId)
@@ -66,7 +67,8 @@ export const addTags = async (
                 text,
                 presence: presence || "negative",
                 type,
-                slug
+                slug,
+                group
             }
         }
         if (type === "incident") {
@@ -81,7 +83,8 @@ export const addTags = async (
                 taggedInfo,
                 text,
                 type,
-                slug
+                slug,
+                group
             }
         }
 
