@@ -12,7 +12,7 @@ export class TagController {
         // if (!req.files || Object.keys(req.files).length === 0) {
         //     return res.status(400).send('No files were uploaded.');
         // }
-        const { incident, action, locations, sample, userId, modelId, taggedInfo, objectName, text, presence, type } = req.body
+        const { incident, action, locations, sample, userId, modelId, taggedInfo, objectName, text, presence, type, group } = req.body
 
 
         if (!userId) {
@@ -29,7 +29,7 @@ export class TagController {
                 fileName = imageFile?.originalname
             }
 
-            const data = await TagsServices.addTags(incident, objectName, fileName, action, locations, sample, userId, modelId, evidenceFile, taggedInfo, text, presence, type);
+            const data = await TagsServices.addTags(incident, objectName, fileName, action, locations, sample, userId, modelId, evidenceFile, taggedInfo, text, presence, type, group);
             res.status(200).json({
                 status: "success",
                 data,
