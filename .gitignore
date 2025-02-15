@@ -1,6 +1,7 @@
 # ignored files
 node_modules
 
+dist
 # ignore local files from dev uploads
 src/utils/aws/*
 !src/utils/aws/aws.ts
