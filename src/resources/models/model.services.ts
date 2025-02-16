@@ -879,7 +879,7 @@ export const updateModels = async (id: string, modelName: string, description: s
     try {
         const result = await modelModel.findByIdAndUpdate(
             id,
-            { modelName, description, location, coverPicture, twoDFile },
+            { modelName, description, location, coverPicture, twoD: twoDFile },
         )
         return result
     } catch (error: any) {
