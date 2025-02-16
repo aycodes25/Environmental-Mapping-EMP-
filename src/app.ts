@@ -89,7 +89,7 @@ export class App {
                         throw new Error("Error during super admin seeding");
                     }
                 } else {
-                    throw new Error("Super admin seeding is not allowed in production environment");
+                    // throw new Error("Super admin seeding is not allowed in production environment");
                 }
             } catch (error) {
                 throw error;
