@@ -4,6 +4,9 @@ WORKDIR /emp-typescript
 
 COPY package*.json ./
 
+# Copy all files first together with tsconfig
+COPY . .
+
 RUN npm install
 
 RUN npm run build
