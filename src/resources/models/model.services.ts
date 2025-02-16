@@ -52,7 +52,7 @@ export const createModel = async (
                 let coverPhotoUrl = await saveToDisk(imageFile, imageKey)
                 return { modelUrl, coverPhotoUrl }
             }
-            return uploadFilesToS3(modelFile, imageFile, modelKey, imageKey);
+            return uploadFilesToS3(modelFile, imageFile, imageKey, modelKey);
         })()
         let model;
         if (twoDFileData && twoDFileName) {
