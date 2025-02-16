@@ -6,7 +6,7 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "set DEBUG=false & nodemon dist/index.js",
-        "dev": "set NODE_ENV=development&& nodemon src/index.ts",
+        "dev": "set NODE_ENV=development && nodemon src/index.ts",
         "build": "tsc",
         "format": "prettier --write src"
     },
