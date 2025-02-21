@@ -10,10 +10,12 @@ interface Location {
 }
 const LocationsSchema = new Schema({
     name: {
-        type: String
+        type: String,
+        required: true
     },
     location: {
-        type: String
+        type: String,
+        default: "Texas",
     },
     user: {
         type: mongoose.Types.ObjectId
