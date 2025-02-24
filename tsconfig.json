@@ -1,31 +1,30 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "baseUrl": "./src",
+    "baseUrl": "./src" /* Specify the base directory to resolve non-relative module names. */,
     "paths": {
-      "@/utils/*": ["utils/*"],
-      "@/middlewares/*": ["middlewares/*"],
-      "@/resources/*": ["resources/*"],
-      "@/configs/*": ["configs/*"]
-    },
+      "@/utils/*": [
+"utils/*"
+],
+      "@/middlewares/*": [
+"middlewares/*"
+],
+      "@/resources/*": [
+"resources/*"
+],
+      "@/configs/*": [
+"configs/*"
+]
+    } /* Specify a set of entries that re-map imports to additional lookup locations. */,
     "esModuleInterop": true,
     "target": "es6",
     "moduleResolution": "node",
     "sourceMap": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "rootDir": "./",
-    "outDir": "./dist"
-  },
-  "include": [
-    "src/",
-    "package.json",
-    "package-lock.json",
-    "dump/mode.index.ts"
-  ],
-  "exclude": ["node_modules", ".build", "dist"],
-  "execMap": {
-    "ts": "ts-node"
-  },
-  "lib": ["es2015"]
+    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
+    "strict": true /* Enable all strict type-checking options. */,
+    "outDir": "dist"
+    },
+  "lib": [
+"es2015"
+]
 }
