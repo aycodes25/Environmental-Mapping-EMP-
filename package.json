@@ -6,11 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "set DEBUG=false & nodemon dist/index.js",
-    "dev": "nodemon src/index.ts",
-    "clean": "rm -rf ./dist",
-    "copy": "sh ./scripts/copy.sh",
-    "build": "npm run clean && tsc && npm run copy",
-    "tsc": "tsc",
+    "dev": "set NODE_ENV=development&& nodemon src/index.ts",
+    "build": "tsc",
     "format": "prettier --write src"
   },
   "watch": [

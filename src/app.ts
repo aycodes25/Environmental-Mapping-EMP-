@@ -22,115 +22,117 @@ dotenv.config({
 });
 
 export class App {
-    public app: Application;
+  public app: Application;
 
-    public port: number | undefined;
-    private server: Server;
+  public port: number | undefined;
+  private server: Server;
 
-    constructor(controllers: Controller[], port?: number) {
-        debug(this.constructor.name);
-        this.app = express();
-        this.port = port
-        this.server = http.createServer(this.app);
-        this.initialiseDatabaseConnection()
-        this.initialiseMiddleware()
-        this.initialiseControllers(controllers)
-        this.initialiseHealthCheck();
-        this.routeError404();
-        this.initialiseErrorHandling();
-    }
+  constructor(controllers: Controller[], port?: number) {
+    debug(this.constructor.name);
+    this.app = express();
+    this.port = port;
+    this.server = http.createServer(this.app);
+    this.initialiseDatabaseConnection();
+    this.initialiseMiddleware();
+    this.initialiseControllers(controllers);
+    this.initialiseHealthCheck();
+    this.routeError404();
+    this.initialiseErrorHandling();
+  }
 
-    //all global middlewares here
-    private initialiseMiddleware(): void {
-        // this.app.use(helmet());
+  //all global middlewares here
+  private initialiseMiddleware(): void {
+    // this.app.use(helmet());
 
-        this.app.use(cors({
-            origin: '*'
-        }));
-        this.app.use(morgan("dev"));
-        this.app.use(express.json());
-        this.app.use(express.urlencoded({ extended: false }));
-        // this.app.use(compression());
+    this.app.use(
+      cors({
+        origin: "*",
+      })
+    );
+    this.app.use(morgan("dev"));
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: false }));
+    // this.app.use(compression());
+  }
+  private initialiseControllers(
+    controllers: Controller[],
+    baseUrl = "/api"
+  ): void {
+    controllers.forEach((controller: Controller) => {
+      this.app.use(`${baseUrl}`, controller.router);
+    });
+  }
 
-    }
-    private initialiseControllers(
-        controllers: Controller[],
-        baseUrl = "/api"
-    ): void {
-        controllers.forEach((controller: Controller) => {
-            this.app.use(`${baseUrl}`, controller.router);
+  //Error handling middleware
+  private initialiseErrorHandling(): void {
+    this.app.use(ErrorMiddleWare);
+  }
+
+  //Error 404 handling middleware
+  private routeError404(): void {
+    this.app.use(Error404Middleware);
+  }
+
+  private async initialiseDatabaseConnection(): Promise<void> {
+    const { MONGO_URL, NODE_ENV } = process.env;
+    console.log(MONGO_URL);
+    const connectDB = async () => {
+      try {
+        await mongoose.connect(`${MONGO_URL}`, {
+          serverSelectionTimeoutMS: 5000,
         });
-    }
+        console.log(`Connected to MongoDB (${NODE_ENV} environment)`);
 
-    //Error handling middleware
-    private initialiseErrorHandling(): void {
-        this.app.use(ErrorMiddleWare);
-    }
-
-    //Error 404 handling middleware
-    private routeError404(): void {
-        this.app.use(Error404Middleware);
-    }
-
-    private async initialiseDatabaseConnection(): Promise<void> {
-        const { MONGO_URL, NODE_ENV } = process.env;
-        console.log(MONGO_URL)
-        const connectDB = async () => {
-            try {
-                await mongoose.connect(`${MONGO_URL}`, {
-                    serverSelectionTimeoutMS: 5000,
-                });
-                console.log(`Connected to MongoDB (${NODE_ENV} environment)`);
-
-
-                if (NODE_ENV === "development") {
-                    try {
-                        await seedSuperAdmin();
-                    } catch (error) {
-                        throw new Error("Error during super admin seeding");
-                    }
-                } else {
-                    throw new Error("Super admin seeding is not allowed in production environment");
-                }
-            } catch (error) {
-                throw error;
-                // setTimeout(connectDB, 5000);
-            }
-        };
-
-        connectDB();
-    }
-
-    private initialiseHealthCheck(): void {
-        console.log(
-          "health check endpoint ===>>>>>",
-    `http://localhost:${this.port}/api/health`
-        );
-    
-        this.app.get("/api/health", async (req: Request, res: Response) => {
-          const dbState = mongoose.connection.readyState;
-          const isDBConnected = dbState === 1;
-    
-          const healthStatus = {
-            status: "ok",
-            uptime: process.uptime(),
-            timestamp: new Date().toISOString(),
-            database: isDBConnected ? "connected" : "disconnected",
-          };
-    
-          if (!isDBConnected) {
-            return res.status(500).json({ ...healthStatus, status: "error" });
+        if (NODE_ENV === "development") {
+          try {
+            await seedSuperAdmin();
+          } catch (error) {
+            throw new Error("Error during super admin seeding");
           }
-    
-          res.status(200).json(healthStatus);
-        });
+        } else {
+          throw new Error(
+            "Super admin seeding is not allowed in production environment"
+          );
+        }
+      } catch (error) {
+        throw error;
+        // setTimeout(connectDB, 5000);
+      }
+    };
+
+    connectDB();
+  }
+
+  private initialiseHealthCheck(): void {
+    console.log(
+      "health check endpoint ===>>>>>",
+      `http://localhost:${this.port}/api/health`
+    );
+
+    this.app.get("/api/health", async (req: Request, res: Response) => {
+      const dbState = mongoose.connection.readyState;
+      const isDBConnected = dbState === 1;
+
+      const healthStatus = {
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        database: isDBConnected ? "connected" : "disconnected",
+      };
+
+      if (!isDBConnected) {
+        return res.status(500).json({ ...healthStatus, status: "error" });
       }
 
-    public listen(): void {
-        this.server.listen(this.port, () => {
-            console.log(`App running on port : ${this.port}`);
-        });
-    }
+      res.status(200).json(healthStatus);
+    });
+  }
+
+  public listen(): void {
+    this.server.listen(this.port, () => {
+      console.log(`App running on port : ${this.port}`);
+    });
+  }
 }
 
 
