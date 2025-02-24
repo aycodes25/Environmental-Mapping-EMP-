@@ -11,7 +11,7 @@ RUN npm install
 
 RUN npm run build
 
-# second copy potentially over writing dist? 
- COPY . . 
+
+COPY . . 
 
 CMD npm run start
