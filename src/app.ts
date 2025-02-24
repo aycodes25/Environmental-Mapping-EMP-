@@ -1,4 +1,4 @@
-import express, { Application, Request } from "express"
+import express, { Application, Request, Response } from "express"
 import { Controller } from "./utils/interfaces/controller.interface";
 import http, { Server } from "http"
 import mongoose from "mongoose";
@@ -35,6 +35,7 @@ export class App {
         this.initialiseDatabaseConnection()
         this.initialiseMiddleware()
         this.initialiseControllers(controllers)
+        this.initialiseHealthCheck();
         this.routeError404();
         this.initialiseErrorHandling();
     }
@@ -99,6 +100,31 @@ export class App {
 
         connectDB();
     }
+
+    private initialiseHealthCheck(): void {
+        console.log(
+          "health check endpoint ===>>>>>",
+    `http://localhost:${this.port}/api/health`
+        );
+    
+        this.app.get("/api/health", async (req: Request, res: Response) => {
+          const dbState = mongoose.connection.readyState;
+          const isDBConnected = dbState === 1;
+    
+          const healthStatus = {
+            status: "ok",
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+            database: isDBConnected ? "connected" : "disconnected",
+          };
+    
+          if (!isDBConnected) {
+            return res.status(500).json({ ...healthStatus, status: "error" });
+          }
+    
+          res.status(200).json(healthStatus);
+        });
+      }
 
     public listen(): void {
         this.server.listen(this.port, () => {
