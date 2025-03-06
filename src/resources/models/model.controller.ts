@@ -4,6 +4,7 @@ import { HttpException } from "../../utils/exceptions/http.exceptions";
 import modelModel from "./model.model";
 import { saveToDisk, UploadSampleToS3 } from "../../utils/aws/aws";
 import { AuthUserRequest } from "@../../middlewares/auth.middleware";
+import objectGroupsModel from "./object-groups.model";
 
 export class ModelController {
     async createModel(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -330,5 +331,78 @@ export class ModelController {
         }
     }
 
+    async createObjectGroup(req: AuthUserRequest, res: Response, next: NextFunction) {
+        try {
+            const { modelId } = req.params;
+            const { name, cameraPosition, cameraDirection, cameraRotation } = req.body;
+
+            // Check if the model exists
+            const existingModel = await modelModel.findById(modelId);
+            if (!existingModel) {
+                res.status(404).json({ message: "Model not found" });
+                return;
+            }
+
+            const newObjectGroup = new objectGroupsModel({
+                name,
+                cameraPosition,
+                cameraDirection,
+                cameraRotation,
+                modelId: modelId,
+            });
+
+            const savedObjectGroup = await newObjectGroup.save();
+            res.status(201).json(savedObjectGroup);
+        } catch (error) {
+            console.error("Error creating object group:", error);
+            next(new HttpException(500, "Internal server error"));
+        }
+    }
+
+    async getObjectGroupsByModel(req: AuthUserRequest, res: Response, next: NextFunction) {
+        try {
+            const { modelId } = req.params;
+
+            // Check if the model exists
+            const existingModel = await modelModel.findById(modelId);
+            if (!existingModel) {
+                res.status(404).json({ message: "Model not found" });
+                return;
+            }
+
+            const objectGroups = await objectGroupsModel.find({ modelId: modelId });
+            res.status(200).json(objectGroups);
+        } catch (error) {
+            console.error("Error getting object groups:", error);
+            next(new HttpException(500, "Internal server error"));
+        }
+    }
+
+    async deleteObjectGroup(req: AuthUserRequest, res: Response, next: NextFunction) {
+        try {
+            const { modelId, objectGroupId } = req.params;
+
+            // Check if the model exists
+            const existingModel = await modelModel.findById(modelId);
+            if (!existingModel) {
+                res.status(404).json({ message: "Model not found" });
+                return;
+            }
+
+            // Check if the object group exists
+            const existingObjectGroup = await objectGroupsModel.findById(objectGroupId);
+            if (!existingObjectGroup) {
+                res.status(404).json({ message: "Object group not found" });
+                return;
+            }
+
+            // Delete the object group
+            await objectGroupsModel.findByIdAndDelete(objectGroupId);
+            res.status(200).json({ message: "Object group deleted" });
+        } catch (error) {
+            console.error("Error deleting object group:", error);
+            next(new HttpException(500, "Internal server error"));
+        }
+    }
 
 }
