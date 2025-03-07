@@ -12,7 +12,7 @@ export class ModelController {
             if (!req.files || Object.keys(req.files).length === 0) {
                 return res.status(400).send({ status: "error", message: 'No files were uploaded.' });
             }
-            const { modelName, description, userId, location, size } = req.body;
+            const { modelName, description, userId, location, size, isComplete } = req.body;
             const files = req.files;
             // console.log(files);
 
@@ -47,6 +47,14 @@ export class ModelController {
             } else {
                 data = await modelService.createModel(modelName, description, userId, modelData, size, imageData, imageFileName, modelFileName, location);
             }
+            
+            // After creating the model, update it with the isComplete field if provided
+            if (data && data._id && isComplete !== undefined) {
+                await modelModel.findByIdAndUpdate(data._id, { 
+                    isComplete: isComplete === 'true' || isComplete === true 
+                });
+            }
+            
             res.json({
                 status: "success",
                 data,
@@ -256,7 +264,7 @@ export class ModelController {
                 return res.status(400).send({ status: "error", message: 'Model ID is required' });
             }
 
-            const { description, modelName, location } = req.body;
+            const { description, modelName, location, isComplete } = req.body;
 
             let coverPicture;
             let model;
@@ -319,7 +327,15 @@ export class ModelController {
             }
 
             try {
+                // First update the model with files and basic info
                 model = await modelService.updateModels(id, modelName, description, location, coverPicture || existingModel.coverPicture, twoD || existingModel.twoD);
+                
+                // Then update the isComplete field if it was provided
+                if (isComplete !== undefined) {
+                    await modelModel.findByIdAndUpdate(id, { 
+                        isComplete: isComplete === 'true' || isComplete === true 
+                    });
+                }
             } catch (error: any) {
                 return res.status(500).json({ status: "error", message: "Failed to update model", error: error.message });
             }
