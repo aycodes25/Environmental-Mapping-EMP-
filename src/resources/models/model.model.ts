@@ -8,6 +8,7 @@ const modelSchema = new Schema({
         type: String,
         required: true
     },
+    isComplete: { type: Boolean, default: false },
     file: { type: String, required: true },
     size: { type: Number, required: false },
     modelName: { type: String, require: true },

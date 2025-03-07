@@ -6,6 +6,7 @@ export default interface Model extends Document {
     file: string;
     modelName: string;
     coverPicture: string;
+    isComplete: boolean;
     twoD?: string;  
     user: mongoose.Types.ObjectId,
     tags: [mongoose.Types.ObjectId],
