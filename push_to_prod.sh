@@ -1,3 +1,3 @@
 #!/bin/bash
 
-git push --force deployment  production:main
+git push deployment  production:developement

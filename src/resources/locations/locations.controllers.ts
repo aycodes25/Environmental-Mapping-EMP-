@@ -8,11 +8,12 @@ import { RoleType } from "../users/user.Interface";
 export class LocationController {
     async createLocation(req: AuthUserRequest, res: Response, next: NextFunction) {
         try {
-            const { name, location, user } = req.body
+            const { name, user } = req.body
             const files = req.files;
+            const location = "Texas"
             let newLocation
-            if (!name || !location) {
-                return res.status(400).send({ status: "error", message: 'upload name or location' });
+            if (!name) {
+                return res.status(400).send({ status: "error", message: 'Name is required' });
             }
             if (files) {
                 // File was sent, handle the upload
@@ -97,10 +98,11 @@ export class LocationController {
     async updateLocations(req: AuthUserRequest, res: Response, next: NextFunction) {
         try {
             const id = req.params.id
-            const { location, name } = req.body
+            const { name } = req.body
+            const location = "Texas"
             let locations;
             const files = req.files;
-            // Check if the sample ID is provided
+            
             if (!id) {
                 return res.status(400).send({ status: "error", message: 'Location ID is required' });
             }
@@ -108,17 +110,18 @@ export class LocationController {
             const existingLocation = await locationsModels.findById(id)
 
             if (!existingLocation) {
-                return res.status(404).send('Sample not found');
+                return res.status(404).send('Location not found');  // Updated error message
             }
 
+            // Create update object with only provided fields
+            const updateData: { name?: string; location?: string; image?: string } = {};
+            if (name) updateData.name = name;
+            if (location) updateData.location = location;
 
             if (files) {
                 // File was sent, handle the upload
                 let imageFile: Express.Multer.File | null = null;
 
-                // Ensure name and description are provided if updating image
-
-                // Check if the uploaded file is an array
                 if (typeof files === 'object' && files !== null && 'image' in files && Array.isArray(files['image'])) {
                     imageFile = files['image'][0];
                 }
@@ -126,8 +129,6 @@ export class LocationController {
                 const imageData = imageFile?.buffer;
                 const imageFileName = imageFile?.originalname;
                 const imageKey = `samples/${existingLocation.name}/${imageFileName}`;
-
-                // Upload image to S3 and get the URL
 
                 const imageUrl = await (async () => {
                     if (process.env.NODE_ENV === "development") {
@@ -137,20 +138,16 @@ export class LocationController {
                     return UploadSampleToS3(imageData, imageKey)
                 })()
 
-                // Update sample with new details
-                locations = await locationsModels.findByIdAndUpdate(
-                    id,
-                    { location, image: imageUrl, name },
-                    { new: true } // Return the updated sample
-                );
-            } else {
-                // No file was sent, update sample with provided details
-                locations = await locationsModels.findByIdAndUpdate(
-                    id,
-                    { location, name },
-                    { new: true } // Return the updated sample
-                );
+                updateData.image = imageUrl;
             }
+
+            // Update location with only the provided fields
+            locations = await locationsModels.findByIdAndUpdate(
+                id,
+                updateData,
+                { new: true }
+            );
+
             res.status(200).json({
                 message: 'success',
                 data: locations

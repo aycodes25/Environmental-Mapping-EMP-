@@ -52,7 +52,7 @@ export const createModel = async (
                 let coverPhotoUrl = await saveToDisk(imageFile, imageKey)
                 return { modelUrl, coverPhotoUrl }
             }
-            return uploadFilesToS3(modelFile, imageFile, modelKey, imageKey);
+            return uploadFilesToS3(modelFile, imageFile, imageKey, modelKey);
         })()
         let model;
         if (twoDFileData && twoDFileName) {
@@ -879,7 +879,7 @@ export const updateModels = async (id: string, modelName: string, description: s
     try {
         const result = await modelModel.findByIdAndUpdate(
             id,
-            { modelName, description, location, coverPicture, twoDFile },
+            { modelName, description, location, coverPicture, twoD: twoDFile },
         )
         return result
     } catch (error: any) {

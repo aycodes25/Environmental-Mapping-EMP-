@@ -151,9 +151,10 @@ export class TagController {
                     .populate({ path: 'sample' })
                     .populate({ path: 'model', populate: [{ path: 'location' }, { path: 'comments' }] })
                     .sort({ createdAt: -1 });
+                
                 res.status(200).json({
                     message: 'Filtered tags based on user\'s allowed locations',
-                    data: [...tags.filter((i: any) => i.user?.locations?.valueOf() === user?.locations?.valueOf())],
+                    data: [...tags.filter((i: any) => i.model?.location?._id?.valueOf() === user?.locations?.valueOf())],
                     status: "success",
                 });
             }
