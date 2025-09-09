@@ -106,5 +106,36 @@ export class ModelRoute {
          * @DESC get updated models
          */
         this.router.post(`${this.path}/update-model/:id`, authenticateUser, fields, this.model.UpdatedModel)
+
+        // Object Group Routes
+        /**
+         * @POST /model/:modelId/object-group
+         * @DESC Create an object group for a specific model
+         */
+        this.router.post(
+            `${this.path}/:modelId/object-group`,
+            authenticateUser,
+            this.model.createObjectGroup
+        );
+
+        /**
+         * @GET /model/:modelId/object-groups
+         * @DESC Get all object groups for a specific model
+         */
+        this.router.get(
+            `${this.path}/:modelId/object-group`,
+            authenticateUser,
+            this.model.getObjectGroupsByModel
+        );
+
+        /**
+         * @DELETE /model/:modelId/object-group/:objectGroupId
+         * @DESC Delete an object group
+         */
+        this.router.delete(
+            `${this.path}/:modelId/object-group/:objectGroupId`,
+            authenticateUser,
+            this.model.deleteObjectGroup
+        );
     }
 }
