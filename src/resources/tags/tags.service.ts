@@ -146,6 +146,7 @@ export const taggedSamplesByday = async (): Promise<any> => {
 		return { error: error.message };
 	}
 };
+
 export const getTotalTagsBySampleAndMonth = async (
 	userId: string
 ): Promise<any> => {
@@ -160,84 +161,68 @@ export const getTotalTagsBySampleAndMonth = async (
 		let tagsBySampleAndMonth;
 
 		if (user.role === RoleType.superAdmin) {
-			// If the user is a super admin, execute the aggregation query without location restriction
+			// No location restriction for super admin
 			tagsBySampleAndMonth = await tagsModel.aggregate([
-				// Your aggregation pipeline
 				{
 					$group: {
 						_id: {
 							sample: "$sample",
-							month: { $month: "$createdAt" }, // Extract month from createdAt field
+							month: { $month: "$createdAt" }, // Extract month
 						},
-						totalTags: { $sum: 1 }, // Count the tags
+						totalTags: { $sum: 1 },
 					},
-				},
-				{
-					$lookup: {
-						from: "samples", // Name of the collection to perform the lookup
-						localField: "_id.sample", // Field from the tagsBySampleAndMonth pipeline
-						foreignField: "_id", // Field from the Samples collection
-						as: "sampleData", // Alias for the joined data
-					},
-				},
-				{
-					$unwind: "$sampleData", // Unwind the sampleData array to get a single document per group
 				},
 				{
 					$project: {
-						_id: 0, // Exclude the _id field from the final result
-						name: "$sampleData.name", // Include the sample name
-						totalTags: 1, // Include the totalTags field
-						month: "$_id.month", // Include the month
+						_id: 0,
+						sample: "$_id.sample",
+						month: "$_id.month",
+						totalTags: 1,
 					},
+				},
+				{
+					$sort: { sample: 1, month: 1 },
 				},
 			]);
 		} else {
-			// If the user is not a super admin, execute the aggregation query with location restriction
-			// If the user is not a super admin, execute the aggregation query with location restriction
+			// Restrict by user's locations
 			tagsBySampleAndMonth = await tagsModel.aggregate([
 				{
 					$match: {
-						location: user?.locations?.valueOf(), // Filter by allowed locations
+						locations: user?.locations?.valueOf(),
 					},
 				},
 				{
 					$group: {
 						_id: {
 							sample: "$sample",
-							month: { $month: "$createdAt" }, // Extract month from createdAt field
+							month: { $month: "$createdAt" },
 						},
-						totalTags: { $sum: 1 }, // Count the tags
+						totalTags: { $sum: 1 },
 					},
-				},
-				{
-					$lookup: {
-						from: "samples", // Name of the collection to perform the lookup
-						localField: "_id.sample", // Field from the tagsBySampleAndMonth pipeline
-						foreignField: "_id", // Field from the Samples collection
-						as: "sampleData", // Alias for the joined data
-					},
-				},
-				{
-					$unwind: "$sampleData", // Unwind the sampleData array to get a single document per group
 				},
 				{
 					$project: {
-						_id: 0, // Exclude the _id field from the final result
-						name: "$sampleData.name", // Include the sample name
-						totalTags: 1, // Include the totalTags field
-						month: "$_id.month", // Include the month
+						_id: 0,
+						sample: "$_id.sample",
+						month: "$_id.month",
+						totalTags: 1,
 					},
+				},
+				{
+					$sort: { sample: 1, month: 1 },
 				},
 			]);
 		}
 
+		// Group by sample name in JS
 		const result = tagsBySampleAndMonth.reduce(
-			(acc, { name, totalTags, month }) => {
-				if (!acc[name]) {
-					acc[name] = [];
+			(acc, { sample, totalTags, month }) => {
+				if (!sample) sample = "Unknown";
+				if (!acc[sample]) {
+					acc[sample] = [];
 				}
-				acc[name].push({ totalTags, month });
+				acc[sample].push({ totalTags, month });
 				return acc;
 			},
 			{}
@@ -248,6 +233,7 @@ export const getTotalTagsBySampleAndMonth = async (
 		return { error: error.message };
 	}
 };
+
 export const getTotalTagsBySampleAndDay = async (
 	userId: string
 ): Promise<any> => {
@@ -271,47 +257,35 @@ export const getTotalTagsBySampleAndDay = async (
 				{
 					$match: {
 						createdAt: {
-							$gte: startOfWeek.toDate(), // Filter documents from the start of the current week
+							$gte: startOfWeek.toDate(), // Only from start of the current week
 						},
 					},
 				},
 				{
 					$group: {
 						_id: {
-							sample: "$sample",
-							dayOfWeek: { $dayOfWeek: "$createdAt" }, // Extract day of the week from createdAt field
+							sample: "$sample", // group by sample field in Tag
+							dayOfWeek: { $dayOfWeek: "$createdAt" }, // extract day of the week
 						},
-						totalTags: { $sum: 1 }, // Count the tags
+						totalTags: { $sum: 1 }, // count
 					},
-				},
-				{
-					$lookup: {
-						from: "samples", // Name of the collection to perform the lookup
-						localField: "_id.sample", // Field from the tagsBySampleAndDayOfWeek pipeline
-						foreignField: "_id", // Field from the Samples collection
-						as: "sampleData", // Alias for the joined data
-					},
-				},
-				{
-					$unwind: "$sampleData", // Unwind the sampleData array to get a single document per group
 				},
 				{
 					$project: {
-						_id: 0, // Exclude the _id field from the final result
-						name: "$sampleData.name", // Include the sample name
-						totalTags: 1, // Include the totalTags field
-						dayOfWeek: "$_id.dayOfWeek", // Include the day of the week
+						_id: 0,
+						sample: "$_id.sample", // expose sample value
+						dayOfWeek: "$_id.dayOfWeek", // expose day of week
+						totalTags: 1, // expose total count
 					},
 				},
 			]);
 		} else {
-			// If the user is not a super admin, execute the aggregation query with location restriction
 			tagsBySampleAndDayOfWeek = await tagsModel.aggregate([
 				{
 					$match: {
-						location: user?.locations?.valueOf(), // Filter by allowed locations
+						locations: user?.locations?.valueOf(), // filter by location(s)
 						createdAt: {
-							$gte: startOfWeek.toDate(), // Filter documents from the start of the current week
+							$gte: startOfWeek.toDate(),
 						},
 					},
 				},
@@ -319,36 +293,26 @@ export const getTotalTagsBySampleAndDay = async (
 					$group: {
 						_id: {
 							sample: "$sample",
-							dayOfWeek: { $dayOfWeek: "$createdAt" }, // Extract day of the week from createdAt field
+							dayOfWeek: { $dayOfWeek: "$createdAt" },
 						},
-						totalTags: { $sum: 1 }, // Count the tags
+						totalTags: { $sum: 1 },
 					},
-				},
-				{
-					$lookup: {
-						from: "samples", // Name of the collection to perform the lookup
-						localField: "_id.sample", // Field from the tagsBySampleAndDayOfWeek pipeline
-						foreignField: "_id", // Field from the Samples collection
-						as: "sampleData", // Alias for the joined data
-					},
-				},
-				{
-					$unwind: "$sampleData", // Unwind the sampleData array to get a single document per group
 				},
 				{
 					$project: {
-						_id: 0, // Exclude the _id field from the final result
-						name: "$sampleData.name", // Include the sample name
-						totalTags: 1, // Include the totalTags field
-						dayOfWeek: "$_id.dayOfWeek", // Include the day of the week
+						_id: 0,
+						sample: "$_id.sample",
+						dayOfWeek: "$_id.dayOfWeek",
+						totalTags: 1,
 					},
 				},
 			]);
 		}
 
 		// Group the results by sample name
-		const result = tagsBySampleAndDayOfWeek.reduce(
-			(acc, { name, totalTags, dayOfWeek }) => {
+		const result = tagsBySampleAndDayOfWeek?.reduce(
+			(acc, { totalTags, dayOfWeek, ...rest }) => {
+				const name = rest.sample || "Unknown";
 				if (!acc[name]) {
 					acc[name] = [];
 				}
@@ -364,65 +328,8 @@ export const getTotalTagsBySampleAndDay = async (
 	}
 };
 
-// export const getTotalTagsBySampleAndDay = async (userId: string): Promise<any> => {
-//     try {
-//         // Fetch the user
-//         const user = await userModel.findById(userId).exec();
-
-//         if (!user) {
-//             throw new Error('User not found');
-//         }
-
-//         let tagsBySampleAndDayOfWeek;
-
-//         // If the user is a super admin, execute the aggregation query without location restriction
-//         if (user.role === RoleType.superAdmin) {
-//             // Calculate the start of the current week
-//             const startOfWeek = moment().startOf('day').subtract(7, 'days');
-
-//             tagsBySampleAndDayOfWeek = await tagsModel.aggregate([
-//                 {
-//                     $match: {
-//                         createdAt: {
-//                             $gte: startOfWeek.toDate() // Filter documents from the start of the current week
-//                         }
-//                     }
-//                 },
-//                 // Your existing aggregation pipeline
-//             ]);
-//         } else {
-//             // If the user is not a super admin, execute the aggregation query with location restriction
-//             tagsBySampleAndDayOfWeek = await tagsModel.aggregate([
-//                 {
-//                     $match: {
-//                         location: user?.locations?.valueOf(), // Filter by allowed locations
-//                         createdAt: {
-//                             $gte: startOfWeek.toDate() // Filter documents from the start of the current week
-//                         }
-//                     }
-//                 },
-//                 // Your existing aggregation pipeline
-//             ]);
-//         }
-
-//         // Group the results by sample name
-//         const result = tagsBySampleAndDayOfWeek.reduce((acc, { name, totalTags, dayOfWeek }) => {
-//             if (!acc[name]) {
-//                 acc[name] = [];
-//             }
-//             acc[name].push({ totalTags, dayOfWeek });
-//             return acc;
-//         }, {});
-
-//         return result;
-//     } catch (error: any) {
-//     return { error: error.message };
-//     }
-// };
-
-export const taggedIncidentbyMonth = async (userId: string): Promise<any> => {
+export const taggedIncidentByMonth = async (userId: string): Promise<any> => {
 	try {
-		// Fetch the user
 		const user = await userModel.findById(userId).exec();
 
 		if (!user) {
@@ -432,30 +339,17 @@ export const taggedIncidentbyMonth = async (userId: string): Promise<any> => {
 		let result;
 
 		if (user.role === RoleType.superAdmin) {
-			// If the user is a super admin, execute the aggregation query without location restriction
-			// If the user is a super admin, execute the aggregation query without location restriction
+			// No location restriction
 			result = await tagsModel.aggregate([
-				// Your existing aggregation pipeline
-				{
-					$lookup: {
-						from: "incidents",
-						localField: "incident",
-						foreignField: "_id",
-						as: "incident",
-					},
-				},
-				{
-					$unwind: "$incident",
-				},
 				{
 					$project: {
-						month: { $month: { $toDate: "$createdAt" } },
-						incidentName: "$incident.name",
+						month: { $month: "$createdAt" },
+						incident: "$incident", // direct from Tag schema
 					},
 				},
 				{
 					$group: {
-						_id: { incident: "$incidentName", month: "$month" },
+						_id: { incident: "$incident", month: "$month" },
 						totalTags: { $sum: 1 },
 					},
 				},
@@ -479,36 +373,26 @@ export const taggedIncidentbyMonth = async (userId: string): Promise<any> => {
 				},
 			]);
 		} else {
-			// If the user is not a super admin, execute the aggregation query with location restriction
+			// Restrict by user's allowed locations
+			const allowedLocations = Array.isArray(user?.locations?.valueOf())
+				? user.locations.valueOf()
+				: [user?.locations?.valueOf()];
+
 			result = await tagsModel.aggregate([
 				{
 					$match: {
-						location: Array.isArray(user?.locations?.valueOf())
-							? user?.locations?.valueOf()
-							: [user?.locations?.valueOf()],
+						locations: { $in: allowedLocations },
 					},
-				},
-				// Your existing aggregation pipeline after applying location filtering
-				{
-					$lookup: {
-						from: "incidents",
-						localField: "incident",
-						foreignField: "_id",
-						as: "incident",
-					},
-				},
-				{
-					$unwind: "$incident",
 				},
 				{
 					$project: {
-						month: { $month: { $toDate: "$createdAt" } },
-						incidentName: "$incident.name",
+						month: { $month: "$createdAt" },
+						incident: "$incident",
 					},
 				},
 				{
 					$group: {
-						_id: { incident: "$incidentName", month: "$month" },
+						_id: { incident: "$incident", month: "$month" },
 						totalTags: { $sum: 1 },
 					},
 				},
@@ -533,10 +417,10 @@ export const taggedIncidentbyMonth = async (userId: string): Promise<any> => {
 			]);
 		}
 
-		// Convert the result to the desired format
+		// Convert aggregation output to an object keyed by incident
 		const formattedResult: any = {};
 		result.forEach((item: any) => {
-			formattedResult[item.incident] = item.tagsByMonth;
+			formattedResult[item.incident || "Unknown"] = item.tagsByMonth;
 		});
 
 		return formattedResult;
@@ -545,9 +429,8 @@ export const taggedIncidentbyMonth = async (userId: string): Promise<any> => {
 	}
 };
 
-export const taggedIncidentbyDay = async (userId: string): Promise<any> => {
+export const taggedIncidentByDay = async (userId: string): Promise<any> => {
 	try {
-		// Fetch the user
 		const user = await userModel.findById(userId).exec();
 
 		if (!user) {
@@ -557,29 +440,17 @@ export const taggedIncidentbyDay = async (userId: string): Promise<any> => {
 		let result;
 
 		if (user.role === RoleType.superAdmin) {
-			// If the user is a super admin, execute the aggregation query without location restriction
+			// No location restriction
 			result = await tagsModel.aggregate([
-				// Your existing aggregation pipeline
-				{
-					$lookup: {
-						from: "incidents",
-						localField: "incident",
-						foreignField: "_id",
-						as: "incident",
-					},
-				},
-				{
-					$unwind: "$incident",
-				},
 				{
 					$project: {
-						dayOfWeek: { $dayOfWeek: { $toDate: "$createdAt" } }, // Extract day of the week from createdAt field
-						incidentName: "$incident.name",
+						dayOfWeek: { $dayOfWeek: "$createdAt" }, // 1 = Sunday, 7 = Saturday
+						incident: "$incident",
 					},
 				},
 				{
 					$group: {
-						_id: { incident: "$incidentName", dayOfWeek: "$dayOfWeek" }, // Group by incident and day of week
+						_id: { incident: "$incident", dayOfWeek: "$dayOfWeek" },
 						totalTags: { $sum: 1 },
 					},
 				},
@@ -603,34 +474,26 @@ export const taggedIncidentbyDay = async (userId: string): Promise<any> => {
 				},
 			]);
 		} else {
-			// If the user is not a super admin, execute the aggregation query with location restriction
+			// Restrict by user's allowed locations
+			const allowedLocations = Array.isArray(user?.locations?.valueOf())
+				? user.locations.valueOf()
+				: [user?.locations?.valueOf()];
+
 			result = await tagsModel.aggregate([
 				{
 					$match: {
-						location: user?.locations?.valueOf(), // Filter by allowed locations
+						locations: { $in: allowedLocations },
 					},
-				},
-				// Your existing aggregation pipeline after applying location filtering
-				{
-					$lookup: {
-						from: "incidents",
-						localField: "incident",
-						foreignField: "_id",
-						as: "incident",
-					},
-				},
-				{
-					$unwind: "$incident",
 				},
 				{
 					$project: {
-						dayOfWeek: { $dayOfWeek: { $toDate: "$createdAt" } }, // Extract day of the week from createdAt field
-						incidentName: "$incident.name",
+						dayOfWeek: { $dayOfWeek: "$createdAt" },
+						incident: "$incident",
 					},
 				},
 				{
 					$group: {
-						_id: { incident: "$incidentName", dayOfWeek: "$dayOfWeek" }, // Group by incident and day of week
+						_id: { incident: "$incident", dayOfWeek: "$dayOfWeek" },
 						totalTags: { $sum: 1 },
 					},
 				},
@@ -655,10 +518,10 @@ export const taggedIncidentbyDay = async (userId: string): Promise<any> => {
 			]);
 		}
 
-		// Convert the result to the desired format
+		// Convert aggregation output into object keyed by incident
 		const formattedResult: any = {};
 		result.forEach((item: any) => {
-			formattedResult[item.incident] = item.tagsByDayOfWeek;
+			formattedResult[item.incident || "Unknown"] = item.tagsByDayOfWeek;
 		});
 
 		return formattedResult;
@@ -666,6 +529,7 @@ export const taggedIncidentbyDay = async (userId: string): Promise<any> => {
 		return { error: error.message };
 	}
 };
+
 export const deleteModelTags = async (id: string): Promise<any> => {
 	try {
 		// Find the model by its ID
