@@ -12,7 +12,7 @@ import userModel from "./user.model";
 import modelModel from "../models/model.model";
 import { RoleType } from "./user.Interface";
 import { hashPassword, seedSuperAdmin } from "./user.services";
-import { checkIfAuthenticated } from "@/utils/utills";
+import { checkIfAuthenticated } from "../../utils/utills";
 
 export class UserController {
 	async signUpAdmin(req: AuthUserRequest, res: Response, next: NextFunction) {
