@@ -12,6 +12,7 @@ import userModel from "./user.model";
 import modelModel from "../models/model.model";
 import { RoleType } from "./user.Interface";
 import { hashPassword, seedSuperAdmin } from "./user.services";
+import { checkIfAuthenticated } from "@/utils/utills";
 
 export class UserController {
 	async signUpAdmin(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -60,6 +61,19 @@ export class UserController {
 				status: "success",
 				data,
 				message: !data?.error ? "login  success" : data?.error,
+			});
+		} catch (error: any) {
+			next(new HttpException(400, error.message));
+		}
+	}
+
+	async CheckIfAuthenticated(req: Request, res: Response, next: NextFunction) {
+		try {
+			const data = checkIfAuthenticated(req);
+			res.json({
+				status: "success",
+				data,
+				message: data.authenticated ? "Authenticated" : "Not Authenticated",
 			});
 		} catch (error: any) {
 			next(new HttpException(400, error.message));
