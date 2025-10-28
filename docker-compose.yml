@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
 
-  backend:
+  backend-staging:
     container_name: emp-be-staging
     image: oriontechmen/env-typescript:dev
     ports:
