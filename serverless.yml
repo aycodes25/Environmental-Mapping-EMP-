@@ -52,5 +52,3 @@ functions:
           path: /api/{proxy+}
           method: ANY
           cors: true
-      - schedule:
-          rate: cron(0/4 6-23 ? * * *)
