@@ -8,7 +8,8 @@
         "start": "set DEBUG=false & nodemon dist/index.js",
         "dev": "set NODE_ENV=development && nodemon src/index.ts",
         "build": "tsc",
-        "format": "prettier --write src"
+        "format": "prettier --write src",
+        "seed:feedback": "ts-node src/scripts/seed-feedback.ts"
     },
     "watch": [
         "src"
