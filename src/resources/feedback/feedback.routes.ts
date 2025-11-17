@@ -9,7 +9,11 @@ const allowedMimeTypes = [
 	"image/gif",
 	"image/webp",
 	"application/pdf",
-	"text/plain"
+	"text/plain",
+	"video/mp4",
+	"video/quicktime",
+	"video/x-msvideo",
+	"video/webm"
 ];
 
 const attachmentUpload = multer({
@@ -19,7 +23,11 @@ const attachmentUpload = multer({
 		if (allowedMimeTypes.includes(file.mimetype)) {
 			cb(null, true);
 		} else {
-			cb(new Error("Unsupported file type. Please upload images, pdf or text files."));
+			cb(
+				new Error(
+					"Unsupported file type. Please upload images, videos, pdf or text files."
+				)
+			);
 		}
 	}
 }).single("attachment");
