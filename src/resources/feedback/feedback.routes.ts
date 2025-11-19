@@ -9,6 +9,8 @@ const allowedMimeTypes = [
 	"image/gif",
 	"image/webp",
 	"application/pdf",
+	"application/msword",
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 	"text/plain",
 	"video/mp4",
 	"video/quicktime",

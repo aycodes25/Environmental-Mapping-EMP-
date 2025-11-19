@@ -33,20 +33,18 @@ export class FeedbackController {
 			if (file) {
 				const key = `feedback/${userId}/${Date.now()}-${file.originalname}`;
 				const url = await (async () => {
-					// Use disk storage in development or if AWS credentials are not configured
+					// Use disk storage only while developing or when AWS is not configured.
 					const isDevelopment = process.env.NODE_ENV === "development";
-					const hasAWSCredentials = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
-					
-					if (isDevelopment || !hasAWSCredentials) {
+					const hasAWSCredentials =
+						process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
+					const shouldUseDisk = isDevelopment || !hasAWSCredentials;
+
+					if (shouldUseDisk) {
 						return saveToDisk(file.buffer, key);
 					}
-					try {
-						return await UploadSampleToS3(file.buffer, key);
-					} catch (s3Error: any) {
-						// Fallback to disk storage if S3 upload fails
-						console.warn("S3 upload failed, falling back to disk storage:", s3Error?.message);
-						return saveToDisk(file.buffer, key);
-					}
+
+					// In production we rely solely on S3; let errors bubble up so the client is notified.
+					return UploadSampleToS3(file.buffer, key);
 				})();
 				attachment = {
 					url,

@@ -30,22 +30,13 @@ export class UserRoute {
 		);
 
 		/**
-		 * @GET v1/user/seed-super-admin
-		 * @DESC seed super admin user
+		 * @POST v1/user/register
+		 * @DESC register a customer
 		 */
 		this.router.get(
 			`${this.path}/seed-super-admin`,
 			fields,
 			this.userController.seedSuperAdmin
-		);
-
-		/**
-		 * @GET v1/user/seed-user
-		 * @DESC seed adewumi user
-		 */
-		this.router.get(
-			`${this.path}/seed-user`,
-			this.userController.seedUser
 		);
 
 		this.router.get(
@@ -55,15 +46,9 @@ export class UserRoute {
 
 		/**
 		 * @POST v1/user/login
-		 * @DESC login a user with email
+		 * @DESC login a user
 		 */
 		this.router.post(`${this.path}/login`, this.userController.LoginAdmin);
-
-		/**
-		 * @POST v1/user/login-username
-		 * @DESC login a user with username
-		 */
-		this.router.post(`${this.path}/login-username`, this.userController.LoginWithUsername);
 		/**
 		 * @POST /user/register-tagger
 		 * @DESC register a customer

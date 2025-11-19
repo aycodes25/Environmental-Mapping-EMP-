@@ -100,25 +100,14 @@ export const signUpAdmin = async (
 };
 export const Login = async (email: string, password: string): Promise<any> => {
 	try {
-		console.log("Login service received:", { email, password });
-
 		if (!email || !password) {
 			throw new Error("missing  credentials");
 		}
 		password = password.trim().toLowerCase();
 		email = email.trim().toLowerCase();
-
-		console.log("Login service after trim/lowercase:", { email, password });
-
 		const user = await UserSchema.findOne({ email: email })
 			.select("+password")
 			.populate("locations");
-
-		console.log("User found:", user ? "Yes" : "No");
-		if (user) {
-			console.log("User email:", user.email);
-			console.log("User password exists:", !!user.password);
-		}
 
 		// Check if user exists
 		if (!user) {
@@ -343,7 +332,6 @@ export const userUpdate = async (
 
 		return users;
 	} catch (err: any) {
-		console.log(err);
 		if (err instanceof mongoose.Error.ValidationError) {
 			throw new Error("Validation error");
 		} else if (err instanceof mongoose.Error.DocumentNotFoundError) {
@@ -845,49 +833,7 @@ export async function seedSuperAdmin() {
 			const newSuperAdmin = new userModel(superAdminData);
 			await newSuperAdmin.save();
 		}
-		console.log(
-			"super admin created, password is superadmin email is superadmin@mail.com"
-		);
 	} catch (error) {
 		console.error("Error seeding SuperAdmin:", error);
-	}
-}
-
-export async function seedUser() {
-	try {
-		const userData = {
-			username: "adewumi",
-			fullname: "Adewumi User",
-			password: "1234567890",
-			email: "adewumi@mail.com",
-			role: RoleType.tagger,
-			isVerified: true,
-		};
-
-		// Check if user already exists
-		const existingUser = await userModel.findOne({
-			$or: [
-				{ username: userData.username },
-				{ email: userData.email }
-			]
-		});
-
-		if (existingUser) {
-			console.log(`User with username "${userData.username}" or email "${userData.email}" already exists`);
-			return { message: "User already exists", user: existingUser };
-		} else {
-			// Hash the password
-			userData.password = await hashPassword(userData.password);
-
-			// Create new user
-			const newUser = new userModel(userData);
-			await newUser.save();
-
-			console.log(`User "${userData.username}" created successfully with password "${userData.password}"`);
-			return { message: "User created successfully", user: newUser };
-		}
-	} catch (error) {
-		console.error("Error seeding user:", error);
-		throw error;
 	}
 }

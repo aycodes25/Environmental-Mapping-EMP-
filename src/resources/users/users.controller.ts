@@ -11,7 +11,7 @@ import tagsModel from "../tags/tags.model";
 import userModel from "./user.model";
 import modelModel from "../models/model.model";
 import { RoleType } from "./user.Interface";
-import { hashPassword, seedSuperAdmin, seedUser } from "./user.services";
+import { hashPassword, seedSuperAdmin } from "./user.services";
 import { checkIfAuthenticated } from "../../utils/utills";
 
 export class UserController {
@@ -55,32 +55,12 @@ export class UserController {
 
 	async LoginAdmin(req: Request, res: Response, next: NextFunction) {
 		const { email, password } = req.body;
-
-		console.log("LoginAdmin received:", { email, password });
-		console.log("Request headers:", req.headers);
-		console.log("Request body:", req.body);
-
 		try {
 			const data = await userService.Login(email, password);
 			res.json({
 				status: "success",
 				data,
 				message: !data?.error ? "login  success" : data?.error,
-			});
-		} catch (error: any) {
-			console.log("LoginAdmin error:", error.message);
-			next(new HttpException(400, error.message));
-		}
-	}
-
-	async LoginWithUsername(req: Request, res: Response, next: NextFunction) {
-		const { username, password } = req.body;
-		try {
-			const data = await userService.login({ username, password });
-			res.json({
-				status: "success",
-				data,
-				message: "login success",
 			});
 		} catch (error: any) {
 			next(new HttpException(400, error.message));
@@ -105,32 +85,12 @@ export class UserController {
 			await seedSuperAdmin();
 			res.status(201).json({
 				message: "SuperAdmin seeded successfully.",
-				user: { email: "adewumiisrael66@mail.com", password: "12345678900" },
+				user: { email: "superadmin@mail.com", password: "superadmin" },
 			});
 		} catch (error) {
 			console.error("Error seeding SuperAdmin:", error);
 			res.status(500).json({
 				message: "An error occurred while seeding SuperAdmin.",
-			});
-		}
-	}
-
-	async seedUser(req: Request, res: Response, next: NextFunction) {
-		try {
-			const result = await seedUser();
-			res.status(201).json({
-				message: result.message,
-				user: {
-					username: "adewumi",
-					password: "1234567890",
-					email: "adewumi@mail.com",
-					role: "tagger"
-				},
-			});
-		} catch (error) {
-			console.error("Error seeding user:", error);
-			res.status(500).json({
-				message: "An error occurred while seeding user.",
 			});
 		}
 	}
