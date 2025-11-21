@@ -108,6 +108,7 @@ export const Login = async (email: string, password: string): Promise<any> => {
 		const user = await UserSchema.findOne({ email: email })
 			.select("+password")
 			.populate("locations");
+
 		// Check if user exists
 		if (!user) {
 			throw new Error("Incorrect credentials");
@@ -331,7 +332,6 @@ export const userUpdate = async (
 
 		return users;
 	} catch (err: any) {
-		console.log(err);
 		if (err instanceof mongoose.Error.ValidationError) {
 			throw new Error("Validation error");
 		} else if (err instanceof mongoose.Error.DocumentNotFoundError) {
@@ -833,9 +833,6 @@ export async function seedSuperAdmin() {
 			const newSuperAdmin = new userModel(superAdminData);
 			await newSuperAdmin.save();
 		}
-		console.log(
-			"super admin created, password is superadmin email is superadmin@mail.com"
-		);
 	} catch (error) {
 		console.error("Error seeding SuperAdmin:", error);
 	}
