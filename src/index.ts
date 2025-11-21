@@ -9,6 +9,7 @@ import { LocationRoutes } from "./resources/locations/locations.routes";
 import { Granular } from "./resources/granular/granular.routes";
 import { IncidentRoutes } from "./resources/incident/incident.routes";
 import { FilesRoute } from "./resources/localfile/localfile.router";
+import { FeedbackRoutes } from "./resources/feedback/feedback.routes";
 const app = new App(
     [
         new UserRoute(),
@@ -19,7 +20,8 @@ const app = new App(
         new LocationRoutes(),
         new Granular(),
         new IncidentRoutes(),
-        new FilesRoute()
+        new FilesRoute(),
+        new FeedbackRoutes()
     ],
     Number(process.env.PORT)
 )
