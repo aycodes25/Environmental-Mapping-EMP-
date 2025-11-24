@@ -1,7 +1,7 @@
 
 import aws from 'aws-sdk'
 import modelModel from "./model.model";
-import { UploadEvidenceToS3, deleteFileFromDisk, deleteObjectFromS3, extractAWSKeyFromCoverPhotoUrl, saveToDisk, uploadFilesToS3 } from "../../utils/aws/aws";
+import { UploadEvidenceToS3, deleteFileFromDisk, deleteObjectFromS3, extractAWSKeyFromCoverPhotoUrl, saveToDisk, shouldUseLocalDisk, uploadFilesToS3 } from "../../utils/aws/aws";
 import { endOfToday, startOfDay, startOfToday, subDays } from 'date-fns';
 import locationsModels from "../locations/locations.models";
 import userModel from "../users/user.model";
@@ -30,6 +30,7 @@ export const createModel = async (
     twoDFileName?: string
 ): Promise<any> => {
     try {
+        const useLocalDisk = shouldUseLocalDisk();
         const user = await userModel.findOne({ _id: userId })
         if (!user) { return { error: "user not found" } }
         if (!size) size = 0
@@ -47,7 +48,7 @@ export const createModel = async (
         }
 
         const { modelUrl, coverPhotoUrl } = await (async () => {
-            if (process.env.NODE_ENV === "development") {
+            if (useLocalDisk) {
                 let modelUrl = await saveToDisk(modelFile, modelKey)
                 let coverPhotoUrl = await saveToDisk(imageFile, imageKey)
                 return { modelUrl, coverPhotoUrl }
@@ -58,7 +59,7 @@ export const createModel = async (
         if (twoDFileData && twoDFileName) {
 
             const twoDUrl = await (async () => {
-                if (process.env.NODE_ENV === "development") {
+                if (useLocalDisk) {
                     let twoDUrl = await saveToDisk(twoDFileData, twoDimageKey)
                     return twoDUrl
                 }

@@ -258,3 +258,11 @@ export function extractAWSKeyFromCoverPhotoUrl(
 	// Return null if the AWS key cannot be extracted
 	return null;
 }
+
+export function shouldUseLocalDisk(): boolean {
+	return (
+		process.env.NODE_ENV === "development" ||
+		!process.env.AWS_ACCESS_KEY_ID ||
+		!process.env.AWS_SECRET_ACCESS_KEY
+	);
+}
