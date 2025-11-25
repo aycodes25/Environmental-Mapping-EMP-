@@ -10,7 +10,8 @@
         "build": "tsc",
         "format": "prettier --write src",
         "seed:feedback": "ts-node src/scripts/seed-feedback.ts",
-        "seed:tagger": "ts-node src/scripts/seed-tagger-data.ts"
+        "seed:tagger": "ts-node src/scripts/seed-tagger-data.ts",
+        "seed:deleted": "ts-node src/scripts/seed-deleted-models.ts"
     },
     "watch": [
         "src"
