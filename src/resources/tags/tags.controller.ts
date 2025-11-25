@@ -6,6 +6,7 @@ import { RoleType } from "../users/user.Interface";
 import { AuthUserRequest } from "../../middlewares/auth.middleware";
 import userModel from "../users/user.model";
 // import tagsModel from "./tags.model";
+import { toObjectId } from "../../utils/mongo";
 
 export class TagController {
 	async addTag(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -216,6 +217,14 @@ export class TagController {
 				});
 			} else {
 				// If user is not a super admin, filter tags based on user's allowed locations
+				const locationId = toObjectId(user?.locations);
+				if (!locationId) {
+					return res.status(200).json({
+						message: "Filtered tags based on user's allowed locations",
+						data: [],
+						status: "success",
+					});
+				}
 				const tags = await tagModel
 					.find()
 					.populate({ path: "user", select: "locations email username" })
@@ -226,15 +235,14 @@ export class TagController {
 					})
 					.sort({ createdAt: -1 });
 
+				const filteredTags = tags.filter((tag: any) => {
+					const modelLocationId = toObjectId(tag.model?.location?._id);
+					return Boolean(modelLocationId && modelLocationId.equals(locationId));
+				});
+
 				res.status(200).json({
 					message: "Filtered tags based on user's allowed locations",
-					data: [
-						...tags.filter(
-							(i: any) =>
-								i.model?.location?._id?.valueOf() ===
-								user?.locations?.valueOf()
-						),
-					],
+					data: filteredTags,
 					status: "success",
 				});
 			}

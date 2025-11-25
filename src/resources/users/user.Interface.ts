@@ -16,7 +16,7 @@ export default interface User extends Document {
     fullname: string,
     imageUrl: string,
     email: string,
-    locations: mongoose.Types.ObjectId
+    locations: mongoose.Types.ObjectId | mongoose.Types.ObjectId[]
     role: RoleType
     passwordToken: string;
     phone_number: string;

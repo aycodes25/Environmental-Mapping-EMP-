@@ -5,6 +5,7 @@ import userModel from "../users/user.model";
 import tagsModel from "./tags.model";
 import { Types } from "mongoose";
 import { RoleType } from "../users/user.Interface";
+import { toObjectId, toObjectIdArray } from "../../utils/mongo";
 export const addTags = async (
 	incident: string,
 	objectName: string,
@@ -186,10 +187,14 @@ export const getTotalTagsBySampleAndMonth = async (
 			]);
 		} else {
 			// Restrict by user's locations
+			const locationId = toObjectId(user?.locations);
+			if (!locationId) {
+				return {};
+			}
 			tagsBySampleAndMonth = await tagsModel.aggregate([
 				{
 					$match: {
-						locations: user?.locations?.valueOf(),
+						locations: locationId,
 					},
 				},
 				{
@@ -280,10 +285,14 @@ export const getTotalTagsBySampleAndDay = async (
 				},
 			]);
 		} else {
+			const locationId = toObjectId(user?.locations);
+			if (!locationId) {
+				return {};
+			}
 			tagsBySampleAndDayOfWeek = await tagsModel.aggregate([
 				{
 					$match: {
-						locations: user?.locations?.valueOf(), // filter by location(s)
+						locations: locationId, // filter by location(s)
 						createdAt: {
 							$gte: startOfWeek.toDate(),
 						},
@@ -374,9 +383,10 @@ export const taggedIncidentByMonth = async (userId: string): Promise<any> => {
 			]);
 		} else {
 			// Restrict by user's allowed locations
-			const allowedLocations = Array.isArray(user?.locations?.valueOf())
-				? user.locations.valueOf()
-				: [user?.locations?.valueOf()];
+			const allowedLocations = toObjectIdArray(user?.locations);
+			if (!allowedLocations.length) {
+				return {};
+			}
 
 			result = await tagsModel.aggregate([
 				{
@@ -475,9 +485,10 @@ export const taggedIncidentByDay = async (userId: string): Promise<any> => {
 			]);
 		} else {
 			// Restrict by user's allowed locations
-			const allowedLocations = Array.isArray(user?.locations?.valueOf())
-				? user.locations.valueOf()
-				: [user?.locations?.valueOf()];
+			const allowedLocations = toObjectIdArray(user?.locations);
+			if (!allowedLocations.length) {
+				return {};
+			}
 
 			result = await tagsModel.aggregate([
 				{

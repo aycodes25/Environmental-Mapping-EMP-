@@ -9,7 +9,8 @@
         "dev": "set NODE_ENV=development && nodemon src/index.ts",
         "build": "tsc",
         "format": "prettier --write src",
-        "seed:feedback": "ts-node src/scripts/seed-feedback.ts"
+        "seed:feedback": "ts-node src/scripts/seed-feedback.ts",
+        "seed:tagger": "ts-node src/scripts/seed-tagger-data.ts"
     },
     "watch": [
         "src"

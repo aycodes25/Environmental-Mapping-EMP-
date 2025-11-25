@@ -4,6 +4,7 @@ import { saveToDisk, UploadSampleToS3 } from "../../utils/aws/aws";
 import { AuthUserRequest } from "@/middlewares/auth.middleware";
 import userModel from "../users/user.model";
 import { RoleType } from "../users/user.Interface";
+import { toObjectId } from "../../utils/mongo";
 
 export class LocationController {
     async createLocation(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -83,12 +84,18 @@ export class LocationController {
                 });
 
             } else {
-                const locations = await locationsModels.find().sort({ createdAt: -1 }).populate('user');
+                const locationId = toObjectId(user?.locations);
+                const locations = locationId
+                    ? await locationsModels
+                        .find({ _id: locationId })
+                        .sort({ createdAt: -1 })
+                        .populate('user')
+                    : [];
 
                 // Send the response
                 res.status(200).json({
                     message: 'success',
-                    data: [...locations.filter((s: any) => s._id.valueOf() === user?.locations?.valueOf())]
+                    data: locations
                 });
             }
         } catch (error: any) {

@@ -111,6 +111,21 @@ To run the project in development mode, use the following command:
 This command will start the development server and reload the server whenever you make changes to the source code.
 
 
+## Seeding Tagger Data
+
+Use the provided script to create/update a tagger user, assign every location to them, and ensure each location has at least one model so the Location Distribution chart renders data.
+
+```bash
+npm run seed:tagger
+```
+
+Environment overrides (optional):
+
+- `SEED_TAGGER_EMAIL`, `SEED_TAGGER_USERNAME`, `SEED_TAGGER_FULLNAME`, `SEED_TAGGER_PASSWORD`
+- `SEED_MODEL_FILE_URL`, `SEED_MODEL_COVER_URL`
+
+Make sure `MONGO_URL` points to the database you want to seed before running the script.
+
 ### Production Server
 
 To run the project in production mode, use the following command:

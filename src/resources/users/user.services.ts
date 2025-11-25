@@ -13,6 +13,7 @@ import {
 import User, { RoleType } from "./user.Interface";
 import locationsModels from "../locations/locations.models";
 import mongoose from "mongoose";
+import { toObjectId } from "../../utils/mongo";
 dotenv.config();
 
 const s3 = new aws.S3({
@@ -260,12 +261,16 @@ export const getUsers = async (userId: any): Promise<any> => {
 				.sort({ createdAt: -1 });
 		} else {
 			// If the user is not a super admin, filter users based on role and allowed locations
+			const locationId = toObjectId(user?.locations);
+			if (!locationId) {
+				return { users: [], totalUsers: 0 };
+			}
 			users = await userModel
 				.find({
 					role: {
 						$in: [RoleType.reviewer, RoleType.sampler, RoleType.tagger],
 					},
-					locations: user?.locations?.valueOf(),
+					locations: locationId,
 				})
 				.sort({ createdAt: -1 });
 		}
@@ -292,12 +297,16 @@ export const userUpdate = async (
 			delete userData.password;
 		}
 
-		if (userData?.location?.valueOf()) {
-			const locations = await locationsModels.findById(
-				userData?.location?.valueOf()
-			);
-			if (!locations) {
-				throw new Error("Location doesn't exist!");
+		if (userData?.location) {
+			const normalizedLocation = toObjectId(userData.location);
+			if (normalizedLocation) {
+				const locations = await locationsModels.findById(normalizedLocation);
+				if (!locations) {
+					throw new Error("Location doesn't exist!");
+				}
+				userData.location = normalizedLocation;
+			} else {
+				delete userData.location;
 			}
 		}
 
@@ -506,9 +515,13 @@ export const totalTaggers = async (userId: string): Promise<any> => {
 			totalTaggers = await userModel.countDocuments({ role: "tagger" });
 		} else {
 			// If the user is not a super admin, count taggers based on allowed locations
+			const locationId = toObjectId(user?.locations);
+			if (!locationId) {
+				return 0;
+			}
 			totalTaggers = await userModel.countDocuments({
 				role: "tagger",
-				locations: user?.locations?.valueOf(),
+				locations: locationId,
 			});
 		}
 
@@ -533,9 +546,13 @@ export const totalReviewers = async (userId: string): Promise<any> => {
 			totalReviewers = await userModel.countDocuments({ role: "reviewer" });
 		} else {
 			// If the user is not a super admin, count reviewers based on allowed locations
+			const locationId = toObjectId(user?.locations);
+			if (!locationId) {
+				return 0;
+			}
 			totalReviewers = await userModel.countDocuments({
 				role: "reviewer",
-				locations: user?.locations?.valueOf(),
+				locations: locationId,
 			});
 		}
 
