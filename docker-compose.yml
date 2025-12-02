@@ -9,5 +9,3 @@ services:
       - "3000:8000"
     volumes:
       - ./.env:/usr/src/app/.env:ro
-
-

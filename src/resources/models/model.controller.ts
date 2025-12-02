@@ -2,7 +2,7 @@ import { Response, NextFunction } from "express";
 import { modelService } from ".";
 import { HttpException } from "../../utils/exceptions/http.exceptions";
 import modelModel from "./model.model";
-import { saveToDisk, UploadSampleToS3 } from "../../utils/aws/aws";
+import { saveToDisk, UploadSampleToS3, shouldUseLocalDisk } from "../../utils/aws/aws";
 import { AuthUserRequest } from "@../../middlewares/auth.middleware";
 import objectGroupsModel from "./object-groups.model";
 
@@ -285,6 +285,7 @@ export class ModelController {
             }
             const filesCheck = await checkfiles(req);
             if (filesCheck) {
+                const useLocalDisk = shouldUseLocalDisk();
                 let imageFile: Express.Multer.File | null = null;
                 let twoDFile: Express.Multer.File | null = null;
                 // Check if the uploaded file is an array
@@ -295,7 +296,7 @@ export class ModelController {
                     const imageKey = `coverPhoto/${existingModel?.modelName}/${imageFileName}`;
                     try {
                         coverPicture = await (async () => {
-                            if (process.env.NODE_ENV === "development") {
+                            if (useLocalDisk) {
                                 let imageUrl = await saveToDisk(imageData, imageKey)
                                 return imageUrl
                             }
@@ -313,7 +314,7 @@ export class ModelController {
                     const twoDKey = `twoDKey/${existingModel?.modelName}/${twoDFileName}`;
                     try {
                         twoD = await (async () => {
-                            if (process.env.NODE_ENV === "development") {
+                            if (useLocalDisk) {
                                 let imageUrl = await saveToDisk(imageData, twoDKey)
                                 return imageUrl
                             }

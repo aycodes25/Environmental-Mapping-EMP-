@@ -5,6 +5,7 @@ import { saveToDisk, UploadSampleToS3 } from "../../utils/aws/aws";
 import { AuthUserRequest } from '@/middlewares/auth.middleware';
 import userModel from '../users/user.model';
 import { RoleType } from '../users/user.Interface';
+import { toObjectId } from '../../utils/mongo';
 
 
 export class SampleController {
@@ -174,11 +175,18 @@ export class SampleController {
 
             } else {
                 const sample = await sampleModel.find().populate('user', 'username email locations').exec();
+                const locationId = toObjectId(user?.locations);
+                const filteredSamples = locationId
+                    ? sample.filter((s: any) => {
+                        const sampleLocationId = toObjectId(s.user?.locations);
+                        return Boolean(sampleLocationId && sampleLocationId.equals(locationId));
+                    })
+                    : [];
 
                 // Send the response
                 res.status(200).json({
                     message: 'success',
-                    data: [...sample.filter((s: any) => s.user?.locations?.valueOf() === user?.locations?.valueOf())]
+                    data: filteredSamples
                 });
             }
 

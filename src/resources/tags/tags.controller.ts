@@ -2,10 +2,12 @@ import { Response, NextFunction } from "express";
 import { TagsServices } from ".";
 import { HttpException } from "../../utils/exceptions/http.exceptions";
 import tagModel from "./tags.model";
+import modelModel from "../models/model.model";
 import { RoleType } from "../users/user.Interface";
 import { AuthUserRequest } from "../../middlewares/auth.middleware";
 import userModel from "../users/user.model";
 // import tagsModel from "./tags.model";
+import { toObjectId, toObjectIdArray } from "../../utils/mongo";
 
 export class TagController {
 	async addTag(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -216,8 +218,31 @@ export class TagController {
 				});
 			} else {
 				// If user is not a super admin, filter tags based on user's allowed locations
+				const allowedLocationIds = toObjectIdArray(user?.locations);
+				if (!allowedLocationIds.length) {
+					return res.status(200).json({
+						message: "Filtered tags based on user's allowed locations",
+						data: [],
+						status: "success",
+					});
+				}
+
+				const allowedModels = await modelModel
+					.find({ location: { $in: allowedLocationIds } })
+					.select("_id")
+					.lean();
+				const allowedModelIds = allowedModels.map((model) => model._id);
+
+				if (!allowedModelIds.length) {
+					return res.status(200).json({
+						message: "No models found for user's allowed locations",
+						data: [],
+						status: "success",
+					});
+				}
+
 				const tags = await tagModel
-					.find()
+					.find({ model: { $in: allowedModelIds } })
 					.populate({ path: "user", select: "locations email username" })
 					.populate({ path: "sample" })
 					.populate({
@@ -228,13 +253,7 @@ export class TagController {
 
 				res.status(200).json({
 					message: "Filtered tags based on user's allowed locations",
-					data: [
-						...tags.filter(
-							(i: any) =>
-								i.model?.location?._id?.valueOf() ===
-								user?.locations?.valueOf()
-						),
-					],
+					data: tags,
 					status: "success",
 				});
 			}

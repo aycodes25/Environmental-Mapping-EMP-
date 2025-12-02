@@ -3,6 +3,7 @@ import incidentModel from "./incident.model";
 import { AuthUserRequest } from "@/middlewares/auth.middleware";
 import userModel from "../users/user.model";
 import { RoleType } from "../users/user.Interface";
+import { toObjectId } from "../../utils/mongo";
 
 
 export class IncidentController {
@@ -82,11 +83,18 @@ export class IncidentController {
            
              } else {
                 const incident = await incidentModel.find().populate('user', 'username email locations').exec();
+                const locationId = toObjectId(user?.locations);
+                const filteredIncidents = locationId
+                    ? incident.filter((i: any) => {
+                        const incidentLocationId = toObjectId(i.user?.locations);
+                        return Boolean(incidentLocationId && incidentLocationId.equals(locationId));
+                    })
+                    : [];
 
                 // Send the response
                 res.status(200).json({
                     message: 'success',
-                    data: [...incident.filter((i: any) => i.user?.locations?.valueOf() === user?.locations?.valueOf())]
+                    data: filteredIncidents
                 });
              }
         } catch (error: any) {
