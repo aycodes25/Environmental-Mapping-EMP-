@@ -190,6 +190,192 @@ export class TagController {
 			return { error: error.message };
 		}
 	}
+
+	async paginatedTags(req: AuthUserRequest, res: Response, next: NextFunction) {
+		try {
+			const userId = req.user?.userId;
+			const user = await userModel.findById(userId).exec();
+			const page = parseInt((req.query.page as string) || "1", 10) || 1;
+			const limit = parseInt((req.query.limit as string) || "50", 10) || 50;
+			const search = (req.query.search as string) || "";
+			const skip = (page - 1) * limit;
+
+			if (!user) {
+				return res.status(400).send({ error: "User not found" });
+			}
+
+			// Build search query for direct tag fields
+			const searchQuery: any = {};
+			let userIdsForSearch: any[] | null = null;
+			if (search && search.trim()) {
+				const searchRegex = new RegExp(search.trim(), "i");
+				searchQuery.$or = [
+					{ objectName: searchRegex },
+					{ incident: searchRegex },
+					{ presence: searchRegex },
+					{ sample: searchRegex },
+					{ locations: searchRegex },
+					{ text: searchRegex },
+					{ type: searchRegex },
+					{ group: searchRegex },
+					{ slug: searchRegex },
+				];
+
+				// Search by user fullname
+				const matchingUsers = await userModel
+					.find({ fullname: searchRegex })
+					.select("_id")
+					.lean();
+				userIdsForSearch = matchingUsers.map((u) => u._id);
+				if (userIdsForSearch.length > 0) {
+					searchQuery.$or.push({ user: { $in: userIdsForSearch } });
+				}
+			}
+
+			// Check if user is a super admin
+			if (user.role === RoleType.superAdmin) {
+				// If searching by model name or user name, we need to find them first
+				let modelIdsForSearch: any[] | null = null;
+				if (search && search.trim()) {
+					const modelSearchRegex = new RegExp(search.trim(), "i");
+					const matchingModels = await modelModel
+						.find({ modelName: modelSearchRegex })
+						.select("_id")
+						.lean();
+					modelIdsForSearch = matchingModels.map((m) => m._id);
+					if (modelIdsForSearch.length > 0) {
+						searchQuery.$or = searchQuery.$or || [];
+						searchQuery.$or.push({ model: { $in: modelIdsForSearch } });
+					}
+					// User search is already added to searchQuery.$or above
+				}
+
+				const baseQuery = tagModel
+					.find(Object.keys(searchQuery).length > 0 ? searchQuery : {})
+					.populate({ path: "user" })
+					.populate({ path: "sample" })
+					.populate({
+						path: "model",
+						populate: [{ path: "location" }, { path: "comments" }],
+					})
+					.sort({ createdAt: -1 });
+
+				const [tags, total] = await Promise.all([
+					baseQuery.clone().skip(skip).limit(limit),
+					tagModel.countDocuments(
+						Object.keys(searchQuery).length > 0 ? searchQuery : {}
+					),
+				]);
+
+				return res.status(200).json({
+					message: "Paginated tags",
+					data: {
+						items: tags,
+						total,
+						page,
+						limit,
+					},
+					status: "success",
+				});
+			}
+
+			// Non-super admin: filter by allowed locations
+			const allowedLocationIds = toObjectIdArray(user?.locations);
+			if (!allowedLocationIds.length) {
+				return res.status(200).json({
+					message: "Filtered tags based on user's allowed locations",
+					data: {
+						items: [],
+						total: 0,
+						page,
+						limit,
+					},
+					status: "success",
+				});
+			}
+
+			const allowedModels = await modelModel
+				.find({ location: { $in: allowedLocationIds } })
+				.select("_id")
+				.lean();
+			const allowedModelIds = allowedModels.map((model) => model._id);
+
+			if (!allowedModelIds.length) {
+				return res.status(200).json({
+					message: "No models found for user's allowed locations",
+					data: {
+						items: [],
+						total: 0,
+						page,
+						limit,
+					},
+					status: "success",
+				});
+			}
+
+			// Build final query with location filter and search
+			const finalQuery: any = { model: { $in: allowedModelIds } };
+
+			// If searching by model name, filter allowed models first
+			let modelIdsForSearch: any[] | null = null;
+			if (search && search.trim()) {
+				const modelSearchRegex = new RegExp(search.trim(), "i");
+				const matchingModels = await modelModel
+					.find({
+						_id: { $in: allowedModelIds },
+						modelName: modelSearchRegex,
+					})
+					.select("_id")
+					.lean();
+				modelIdsForSearch = matchingModels.map((m) => m._id);
+
+				// Combine search query with location filter
+				if (searchQuery.$or && searchQuery.$or.length > 0) {
+					finalQuery.$and = [
+						{ model: { $in: allowedModelIds } },
+						{ $or: searchQuery.$or },
+					];
+					// If we found matching models, add them to the search
+					if (modelIdsForSearch.length > 0) {
+						finalQuery.$and[1].$or.push({
+							model: { $in: modelIdsForSearch },
+						});
+					}
+				} else if (modelIdsForSearch.length > 0) {
+					// Only model name search matched
+					finalQuery.model = { $in: modelIdsForSearch };
+				}
+			}
+
+			const baseQuery = tagModel
+				.find(finalQuery)
+				.populate({ path: "user", select: "locations email username" })
+				.populate({ path: "sample" })
+				.populate({
+					path: "model",
+					populate: [{ path: "location" }, { path: "comments" }],
+				})
+				.sort({ createdAt: -1 });
+
+			const [tags, total] = await Promise.all([
+				baseQuery.clone().skip(skip).limit(limit),
+				tagModel.countDocuments(finalQuery),
+			]);
+
+			return res.status(200).json({
+				message: "Filtered tags based on user's allowed locations",
+				data: {
+					items: tags,
+					total,
+					page,
+					limit,
+				},
+				status: "success",
+			});
+		} catch (error: any) {
+			next(new HttpException(400, error.message));
+		}
+	}
 	async allTags(req: AuthUserRequest, res: Response, next: NextFunction) {
 		try {
 			const userId = req.user?.userId;
