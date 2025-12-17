@@ -196,7 +196,7 @@ export class TagController {
 			const userId = req.user?.userId;
 			const user = await userModel.findById(userId).exec();
 			const page = parseInt((req.query.page as string) || "1", 10) || 1;
-			const limit = parseInt((req.query.limit as string) || "50", 10) || 50;
+			const limit = parseInt((req.query.limit as string) || "25", 10) || 25;
 			const search = (req.query.search as string) || "";
 			const skip = (page - 1) * limit;
 
