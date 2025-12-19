@@ -198,7 +198,22 @@ export class TagController {
 			const page = parseInt((req.query.page as string) || "1", 10) || 1;
 			const limit = parseInt((req.query.limit as string) || "25", 10) || 25;
 			const search = (req.query.search as string) || "";
+			const startDate = req.query.startDate as string;
+			const endDate = req.query.endDate as string;
 			const skip = (page - 1) * limit;
+
+			// Date filter logic
+			const dateFilter: any = {};
+			if (startDate && endDate) {
+				const start = new Date(startDate);
+				start.setHours(0, 0, 0, 0);
+				const end = new Date(endDate);
+				end.setHours(23, 59, 59, 999);
+				dateFilter.createdAt = {
+					$gte: start,
+					$lte: end,
+				};
+			}
 
 			if (!user) {
 				return res.status(400).send({ error: "User not found" });
@@ -250,21 +265,57 @@ export class TagController {
 					// User search is already added to searchQuery.$or above
 				}
 
-				const baseQuery = tagModel
-					.find(Object.keys(searchQuery).length > 0 ? searchQuery : {})
-					.populate({ path: "user" })
-					.populate({ path: "sample" })
-					.populate({
-						path: "model",
-						populate: [{ path: "location" }, { path: "comments" }],
-					})
-					.sort({ createdAt: -1 });
+				// Get all non-deleted model IDs first to ensure consistency in search and count
+				const safeModelIds = (await modelModel.find({ delete: { $ne: true } }).select('_id').lean()).map(m => m._id);
+
+				// Prepare the base query with search, date filter, and non-deleted model constraint
+				// If specific models were found via search (modelIdsForSearch), we need to INTERSECT them with safeModelIds
+				let effectiveModelFilter: any = { $in: safeModelIds };
+
+				if (modelIdsForSearch && modelIdsForSearch.length > 0) {
+					// Intersection: Models that match search AND are not deleted
+					// Since we don't have a simple lodash intersection here, we can just use $in with a filtered list
+					// But simpler: just add another condition or refine the $in list.
+					// Actually, modelIdsForSearch came from a query. We should check if they are in safeModelIds? 
+					// Or just let MongoDB handle it: $in: [ids] AND $in: [safeIds]
+					// MongoDB handles multiple fields. But here 'model' is one field.
+					// Let's use $and if needed.
+					// However, the cleanest way:
+				}
+
+				// ACTUALLY, simpler approach:
+				// We already have `searchQuery`. If it has model constraints, we need to respect them AND add `delete: false`.
+				// Since `searchQuery` uses `$or` for broad search, simply Adding `model: {$in: safeModelIds}` to the top level 
+				// works as an AND condition with the $or group. 
+				// So: (A or B or C) AND (Model is Safe). This is correct.
+
+				const queryWithSafeModels = {
+					...(Object.keys(searchQuery).length > 0 ? searchQuery : {}),
+					...dateFilter,
+					model: { $in: safeModelIds }
+				};
+
+				// BUT, if `searchQuery` already had a `model` condition (from specific model name search), 
+				// `model: { $in: safeModelIds }` would OVERWRITE it if we just spread it.
+				// Let's check `searchQuery`.
+				// In lines 262-264 we did: `searchQuery.$or.push({ model: { $in: modelIdsForSearch } });`
+				// So `model` is NOT a top-level key in `searchQuery`, it's inside `$or`.
+				// So `queryWithSafeModels` having `model: { ... }` at top level is perfectly fine.
+				// It acts as: ( $or conditions ) AND ( model in safeList ). 
+				// This correctly filters out any match that happens to be on a deleted model.
 
 				const [tags, total] = await Promise.all([
-					baseQuery.clone().skip(skip).limit(limit),
-					tagModel.countDocuments(
-						Object.keys(searchQuery).length > 0 ? searchQuery : {}
-					),
+					tagModel.find(queryWithSafeModels)
+						.populate({ path: "user" })
+						.populate({ path: "sample" })
+						.populate({
+							path: "model",
+							populate: [{ path: "location" }, { path: "comments" }],
+						})
+						.sort({ createdAt: -1 })
+						.skip(skip)
+						.limit(limit),
+					tagModel.countDocuments(queryWithSafeModels),
 				]);
 
 				return res.status(200).json({
@@ -313,8 +364,19 @@ export class TagController {
 				});
 			}
 
-			// Build final query with location filter and search
-			const finalQuery: any = { model: { $in: allowedModelIds } };
+			// Filter out deleted models from allowedModelIds
+			const nonDeletedAllowedModels = await modelModel.find({
+				_id: { $in: allowedModelIds },
+				delete: { $ne: true }
+			}).select('_id').lean();
+
+			const safeAllowedModelIds = nonDeletedAllowedModels.map(m => m._id);
+
+			// Update finalQuery to use only safe IDs
+			const finalQuery: any = {
+				model: { $in: safeAllowedModelIds },
+				...dateFilter,
+			};
 
 			// If searching by model name, filter allowed models first
 			let modelIdsForSearch: any[] | null = null;
@@ -322,7 +384,7 @@ export class TagController {
 				const modelSearchRegex = new RegExp(search.trim(), "i");
 				const matchingModels = await modelModel
 					.find({
-						_id: { $in: allowedModelIds },
+						_id: { $in: safeAllowedModelIds }, // Use safe IDs here
 						modelName: modelSearchRegex,
 					})
 					.select("_id")
@@ -332,7 +394,7 @@ export class TagController {
 				// Combine search query with location filter
 				if (searchQuery.$or && searchQuery.$or.length > 0) {
 					finalQuery.$and = [
-						{ model: { $in: allowedModelIds } },
+						{ model: { $in: safeAllowedModelIds } }, // Use safe IDs here
 						{ $or: searchQuery.$or },
 					];
 					// If we found matching models, add them to the search
