@@ -11,9 +11,7 @@ import { toObjectId, toObjectIdArray } from "../../utils/mongo";
 
 export class TagController {
 	async addTag(req: AuthUserRequest, res: Response, next: NextFunction) {
-		// if (!req.files || Object.keys(req.files).length === 0) {
-		//     return res.status(400).send('No files were uploaded.');
-		// }
+
 		const {
 			incident,
 			action,
@@ -144,34 +142,11 @@ export class TagController {
 			return { error: error.message };
 		}
 	}
-	// async getTotalTagsBySampleAndMonth(req: AuthUserRequest, res: Response, next: NextFunction) {
-	//     try {
-	//         //const { sampleName } = req.query;
-
-	//         const data = await TagsServices.getTotalTagsBySampleAndMonth()
-	//         res.status(200).json({
-	//             message: ' successfully',
-	//             data
-	//         })
-	//     } catch (error: any) {
-	//                 return {error:error.message};
-	//     }
-	// }
 	async getTotalTagsBySampleAndDay(
 		req: AuthUserRequest,
 		res: Response,
 		next: NextFunction
 	) {
-		// try {
-		//     //const { sampleName } = req.query;
-		//     const data = await TagsServices.getTotalTagsBySampleAndDay()
-		//     res.status(200).json({
-		//         message: 'successfully',
-		//         data
-		//     })
-		// } catch (error: any) {
-		//             return {error:error.message};
-		// }
 	}
 	async deleteModelTags(
 		req: AuthUserRequest,
@@ -202,7 +177,7 @@ export class TagController {
 			const endDate = req.query.endDate as string;
 			const skip = (page - 1) * limit;
 
-			// Date filter logic
+
 			const dateFilter: any = {};
 			if (startDate && endDate) {
 				const start = new Date(startDate);
@@ -249,7 +224,7 @@ export class TagController {
 
 			// Check if user is a super admin
 			if (user.role === RoleType.superAdmin) {
-				// If searching by model name or user name, we need to find them first
+
 				let modelIdsForSearch: any[] | null = null;
 				if (search && search.trim()) {
 					const modelSearchRegex = new RegExp(search.trim(), "i");
@@ -262,47 +237,22 @@ export class TagController {
 						searchQuery.$or = searchQuery.$or || [];
 						searchQuery.$or.push({ model: { $in: modelIdsForSearch } });
 					}
-					// User search is already added to searchQuery.$or above
+
 				}
 
-				// Get all non-deleted model IDs first to ensure consistency in search and count
+
 				const safeModelIds = (await modelModel.find({ delete: { $ne: true } }).select('_id').lean()).map(m => m._id);
 
-				// Prepare the base query with search, date filter, and non-deleted model constraint
-				// If specific models were found via search (modelIdsForSearch), we need to INTERSECT them with safeModelIds
 				let effectiveModelFilter: any = { $in: safeModelIds };
 
 				if (modelIdsForSearch && modelIdsForSearch.length > 0) {
-					// Intersection: Models that match search AND are not deleted
-					// Since we don't have a simple lodash intersection here, we can just use $in with a filtered list
-					// But simpler: just add another condition or refine the $in list.
-					// Actually, modelIdsForSearch came from a query. We should check if they are in safeModelIds? 
-					// Or just let MongoDB handle it: $in: [ids] AND $in: [safeIds]
-					// MongoDB handles multiple fields. But here 'model' is one field.
-					// Let's use $and if needed.
-					// However, the cleanest way:
 				}
-
-				// ACTUALLY, simpler approach:
-				// We already have `searchQuery`. If it has model constraints, we need to respect them AND add `delete: false`.
-				// Since `searchQuery` uses `$or` for broad search, simply Adding `model: {$in: safeModelIds}` to the top level 
-				// works as an AND condition with the $or group. 
-				// So: (A or B or C) AND (Model is Safe). This is correct.
 
 				const queryWithSafeModels = {
 					...(Object.keys(searchQuery).length > 0 ? searchQuery : {}),
 					...dateFilter,
 					model: { $in: safeModelIds }
 				};
-
-				// BUT, if `searchQuery` already had a `model` condition (from specific model name search), 
-				// `model: { $in: safeModelIds }` would OVERWRITE it if we just spread it.
-				// Let's check `searchQuery`.
-				// In lines 262-264 we did: `searchQuery.$or.push({ model: { $in: modelIdsForSearch } });`
-				// So `model` is NOT a top-level key in `searchQuery`, it's inside `$or`.
-				// So `queryWithSafeModels` having `model: { ... }` at top level is perfectly fine.
-				// It acts as: ( $or conditions ) AND ( model in safeList ). 
-				// This correctly filters out any match that happens to be on a deleted model.
 
 				const [tags, total] = await Promise.all([
 					tagModel.find(queryWithSafeModels)
@@ -364,7 +314,7 @@ export class TagController {
 				});
 			}
 
-			// Filter out deleted models from allowedModelIds
+
 			const nonDeletedAllowedModels = await modelModel.find({
 				_id: { $in: allowedModelIds },
 				delete: { $ne: true }
@@ -372,39 +322,39 @@ export class TagController {
 
 			const safeAllowedModelIds = nonDeletedAllowedModels.map(m => m._id);
 
-			// Update finalQuery to use only safe IDs
+
 			const finalQuery: any = {
 				model: { $in: safeAllowedModelIds },
 				...dateFilter,
 			};
 
-			// If searching by model name, filter allowed models first
+
 			let modelIdsForSearch: any[] | null = null;
 			if (search && search.trim()) {
 				const modelSearchRegex = new RegExp(search.trim(), "i");
 				const matchingModels = await modelModel
 					.find({
-						_id: { $in: safeAllowedModelIds }, // Use safe IDs here
+						_id: { $in: safeAllowedModelIds },
 						modelName: modelSearchRegex,
 					})
 					.select("_id")
 					.lean();
 				modelIdsForSearch = matchingModels.map((m) => m._id);
 
-				// Combine search query with location filter
+
 				if (searchQuery.$or && searchQuery.$or.length > 0) {
 					finalQuery.$and = [
-						{ model: { $in: safeAllowedModelIds } }, // Use safe IDs here
+						{ model: { $in: safeAllowedModelIds } },
 						{ $or: searchQuery.$or },
 					];
-					// If we found matching models, add them to the search
+
 					if (modelIdsForSearch.length > 0) {
 						finalQuery.$and[1].$or.push({
 							model: { $in: modelIdsForSearch },
 						});
 					}
 				} else if (modelIdsForSearch.length > 0) {
-					// Only model name search matched
+
 					finalQuery.model = { $in: modelIdsForSearch };
 				}
 			}
@@ -449,7 +399,7 @@ export class TagController {
 
 			// Check if user is not found or if user is not a super admin
 			if (user.role === RoleType.superAdmin) {
-				// If user is a super admin, retrieve all tags without location filter
+
 				const tags = await tagModel
 					.find()
 					.populate({ path: "user" })
@@ -465,7 +415,6 @@ export class TagController {
 					status: "success",
 				});
 			} else {
-				// If user is not a super admin, filter tags based on user's allowed locations
 				const allowedLocationIds = toObjectIdArray(user?.locations);
 				if (!allowedLocationIds.length) {
 					return res.status(200).json({
