@@ -32,8 +32,13 @@ export class TagsRoute {
         this.router.get(
             `${this.path}/all-tags`,
             authenticateUser,
-            // fields,
             this.tag.allTags
+        );
+
+        this.router.get(
+            `${this.path}/paginated-tags`,
+            authenticateUser,
+            this.tag.paginatedTags
         );
 
         this.router.put(
