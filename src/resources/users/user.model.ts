@@ -7,7 +7,7 @@ const userSchema = new Schema<User>({
     password: { type: String, required: true, select: false },
     imageUrl: { type: String, required: false },
     email: { type: String, unique: true, required: true },
-    locations: { type: Schema.Types.ObjectId, ref: 'Location' }, // Specify type as Schema.Types.ObjectId
+    locations: [{ type: Schema.Types.ObjectId, ref: 'Location' }],
     role: {
         type: String,
         enum: Object.values(RoleType),

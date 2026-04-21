@@ -88,13 +88,27 @@ export const uploadFilesToS3 = async (
 		const modelUploadResult = await s3.upload(modelUploadParams).promise();
 		const modelUrl = modelUploadResult.Location!;
 
-		let coverPhotoUrl = "";
-		if (coverPhotoFile) {
-			const coverPhotoUploadResult = await s3
-				.upload(coverPhotoUploadParams)
-				.promise();
-			coverPhotoUrl = coverPhotoUploadResult.Location!;
+		if (!coverPhotoFile) {
+			return { modelUrl, coverPhotoUrl: "" };
 		}
+
+		// Upload cover photo file to AWS S3
+		const coverPhotoUploadResult = await s3
+			.upload(coverPhotoUploadParams)
+			.promise();
+		const coverPhotoUrl = coverPhotoUploadResult.Location!;
+		// await Promise.all([
+		//     s3.upload(modelUploadParams).promise(),
+		//     s3.upload(coverPhotoUploadParams).promise()
+		// ]);
+
+		// // Upload model file to AWS S3
+		// const modelUrl = `https://YOUR_S3_BUCKET_NAME.s3.amazonaws.com/${modelkey}`;
+		// const coverPhotoUrl = `https://YOUR_S3_BUCKET_NAME.s3.amazonaws.com/${imageKey}`;
+
+		// // Upload cover photo file to AWS S3
+
+		// console.log({modelUrl:modelUrl, coverPhotoUrl:coverPhotoUrl})
 		return { modelUrl, coverPhotoUrl };
 	} catch (error: any) {
 		throw new Error(error);
@@ -243,4 +257,12 @@ export function extractAWSKeyFromCoverPhotoUrl(
 
 	// Return null if the AWS key cannot be extracted
 	return null;
+}
+
+export function shouldUseLocalDisk(): boolean {
+	return (
+		process.env.NODE_ENV === "development" ||
+		!process.env.AWS_ACCESS_KEY_ID ||
+		!process.env.AWS_SECRET_ACCESS_KEY
+	);
 }

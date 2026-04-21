@@ -13,6 +13,7 @@ import modelModel from "../models/model.model";
 import { RoleType } from "./user.Interface";
 import { hashPassword, seedSuperAdmin } from "./user.services";
 import { checkIfAuthenticated } from "../../utils/utills";
+import { toObjectId } from "../../utils/mongo";
 
 export class UserController {
 	async signUpAdmin(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -261,6 +262,10 @@ export class UserController {
 						return UploadUserToS3(imageData, imageKey);
 					})();
 
+					const persistedLocation = toObjectId(user?.locations);
+					const nextLocation =
+						user.role === "superAdmin" ? persistedLocation : toObjectId(location);
+
 					data = await userService.userUpdate(id, {
 						username: username ?? user.username,
 						email,
@@ -268,23 +273,21 @@ export class UserController {
 							user.role === "superAdmin" ? user.role : role ?? user.role,
 						fullname,
 						imageUrl,
-						location:
-							user.role === "superAdmin"
-								? user?.locations?.valueOf()
-								: location,
+						location: nextLocation,
 						password,
 					});
 				}
 			} else {
+				const persistedLocation = toObjectId(user?.locations);
+				const nextLocation =
+					user.role === "superAdmin" ? persistedLocation : toObjectId(location);
+
 				data = await userService.userUpdate(id, {
 					username: username ?? user.username,
 					email,
 					role: user.role === "superAdmin" ? user.role : role ?? user.role,
 					fullname,
-					location:
-						user.role === "superAdmin"
-							? user?.locations?.valueOf()
-							: location,
+					location: nextLocation,
 					password,
 				});
 			}

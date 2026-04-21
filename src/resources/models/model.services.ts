@@ -1,12 +1,13 @@
 
 import aws from 'aws-sdk'
 import modelModel from "./model.model";
-import { UploadEvidenceToS3, deleteFileFromDisk, deleteObjectFromS3, extractAWSKeyFromCoverPhotoUrl, saveToDisk, uploadFilesToS3 } from "../../utils/aws/aws";
+import { UploadEvidenceToS3, deleteFileFromDisk, deleteObjectFromS3, extractAWSKeyFromCoverPhotoUrl, saveToDisk, shouldUseLocalDisk, uploadFilesToS3 } from "../../utils/aws/aws";
 import { endOfToday, startOfDay, startOfToday, subDays } from 'date-fns';
 import locationsModels from "../locations/locations.models";
 import userModel from "../users/user.model";
 import { RoleType } from '../users/user.Interface';
 import tagsModel from '../tags/tags.model';
+import { toObjectId, toObjectIdArray } from "../../utils/mongo";
 
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -16,6 +17,7 @@ const s3 = new aws.S3({
     signatureVersion: 'v4',
 });
 const S3_BUCKET_NAME = 'enviromentalmapping';
+
 export const createModel = async (
     modelName: string,
     description: string,
@@ -30,6 +32,7 @@ export const createModel = async (
     twoDFileName?: string
 ): Promise<any> => {
     try {
+        const useLocalDisk = shouldUseLocalDisk();
         const user = await userModel.findOne({ _id: userId })
         if (!user) { return { error: "user not found" } }
         if (!size) size = 0
@@ -47,7 +50,7 @@ export const createModel = async (
         }
 
         const { modelUrl, coverPhotoUrl } = await (async () => {
-            if (process.env.NODE_ENV === "development") {
+            if (useLocalDisk) {
                 let modelUrl = await saveToDisk(modelFile, modelKey)
                 let coverPhotoUrl = await saveToDisk(imageFile, imageKey)
                 return { modelUrl, coverPhotoUrl }
@@ -58,7 +61,7 @@ export const createModel = async (
         if (twoDFileData && twoDFileName) {
 
             const twoDUrl = await (async () => {
-                if (process.env.NODE_ENV === "development") {
+                if (useLocalDisk) {
                     let twoDUrl = await saveToDisk(twoDFileData, twoDimageKey)
                     return twoDUrl
                 }
@@ -159,7 +162,15 @@ export const getModel = async (userId: string): Promise<any> => {
             models = await modelModel.find({ delete: false }).sort({ createdAt: -1 }).populate('location').exec();
         } else {
             // If the user is not a super admin, fetch models based on allowed locations
-            models = await modelModel.find({ location: user?.locations?.valueOf().valueOf(), delete: false }).sort({ createdAt: -1 }).populate('location').exec();
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return [];
+            }
+            models = await modelModel
+                .find({ location: { $in: locationIds }, delete: false })
+                .sort({ createdAt: -1 })
+                .populate('location')
+                .exec();
         }
 
         return models;
@@ -186,7 +197,15 @@ export const getSoftedModel = async (userId: string): Promise<any> => {
             models = await modelModel.find({ delete: true }).sort({ createdAt: -1 }).populate('location').exec();
         } else {
             // If the user is not a super admin, fetch soft deleted models based on allowed locations
-            models = await modelModel.find({ location: user?.locations?.valueOf(), delete: true }).sort({ createdAt: -1 }).populate('location').exec();
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return [];
+            }
+            models = await modelModel
+                .find({ location: { $in: locationIds }, delete: true })
+                .sort({ createdAt: -1 })
+                .populate('location')
+                .exec();
         }
 
         return models;
@@ -383,7 +402,11 @@ export const totalModels = async (userId: string): Promise<any> => {
             totalModels = await modelModel.countDocuments({ delete: false });
         } else {
             // If the user is not a super admin, count models based on allowed locations
-            totalModels = await modelModel.countDocuments({ location: user?.locations?.valueOf(), delete: false });
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return 0;
+            }
+            totalModels = await modelModel.countDocuments({ location: { $in: locationIds }, delete: false });
         }
 
         return totalModels;
@@ -423,7 +446,11 @@ export const totalDeletedModels = async (userId: string): Promise<any> => {
             totalDeletedModels = await modelModel.countDocuments({ deleted: true });
         } else {
             // If the user is not a super admin, count deleted models based on allowed locations
-            totalDeletedModels = await modelModel.countDocuments({ location: user?.locations?.valueOf(), deleted: true });
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return 0;
+            }
+            totalDeletedModels = await modelModel.countDocuments({ location: { $in: locationIds }, deleted: true });
         }
 
         return totalDeletedModels;
@@ -451,7 +478,11 @@ export const recentModels = async (userId: string): Promise<any> => {
                 .limit(9);
         } else {
             // If the user is not a super admin, fetch recent models based on allowed locations
-            recentModels = await modelModel.find({ delete: false, location: user?.locations?.valueOf() })
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return [];
+            }
+            recentModels = await modelModel.find({ delete: false, location: { $in: locationIds } })
                 .populate({ path: 'location' })
                 .populate({ path: 'user' })
                 .sort({ createdAt: -1 })
@@ -483,7 +514,15 @@ export const todayModels = async (userId: string): Promise<any> => {
             totalModels = await modelModel.countDocuments({ delete: false, createdAt: { $gte: todayStart, $lte: todayEnd } });
         } else {
             // If the user is not a super admin, count models based on allowed locations created today
-            totalModels = await modelModel.countDocuments({ location: user?.locations?.valueOf(), delete: false, createdAt: { $gte: todayStart, $lte: todayEnd } });
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return 0;
+            }
+            totalModels = await modelModel.countDocuments({
+                location: { $in: locationIds },
+                delete: false,
+                createdAt: { $gte: todayStart, $lte: todayEnd }
+            });
         }
 
         return totalModels;
@@ -608,10 +647,14 @@ export const modelsEachLocation = async (userId: string): Promise<any> => {
             return modelsInEachLocation.filter(model => model.locationName);
         } else {
             // If the user is not a super admin, aggregate models in each location based on allowed locations
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return [];
+            }
             modelsInEachLocation = await modelModel.aggregate([
                 {
                     $match: {
-                        location: user?.locations?.valueOf()
+                        location: { $in: locationIds }
                     }
                 },
                 {
@@ -686,9 +729,13 @@ export const recentlyTaggeddModels = async (userId: string): Promise<any> => {
             // If the user is not a super admin, find models where the updatedAt field matches the current date and time
             // and the model's location is one of the user's allowed locations
             const currentDate = new Date();
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return [];
+            }
             recentlyTaggedModels = await modelModel.find({
                 updatedAt: currentDate,
-                location: user?.locations?.valueOf()
+                location: { $in: locationIds }
             }).populate('location').populate('user');
         }
 
@@ -746,10 +793,14 @@ export const getTotalModelsPerDayOfWeek = async (userId: string): Promise<any> =
             ]);
         } else {
             // If the user is not a super admin, aggregate total models per day of the week based on allowed locations
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return [];
+            }
             result = await modelModel.aggregate([
                 {
                     $match: {
-                        location: user?.locations?.valueOf()
+                        location: { $in: locationIds }
                     }
                 },
                 {
@@ -812,10 +863,14 @@ export const getTotalModelsPerMonth = async (userId: string): Promise<any> => {
             ]);
         } else {
             // If the user is not a super admin, aggregate total models per month based on allowed locations
+            const locationIds = toObjectIdArray(user?.locations);
+            if (!locationIds.length) {
+                return [];
+            }
             result = await modelModel.aggregate([
                 {
                     $match: {
-                        location: user?.locations?.valueOf()
+                        location: { $in: locationIds }
                     }
                 },
                 {

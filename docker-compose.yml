@@ -2,12 +2,10 @@ version: '3.9'
 
 services:
 
-  backend-staging:
-    container_name: emp-be-staging
-    image: oriontechmen/env-typescript:dev
+  backend:
+    container_name: emp-be
+    image: oriontechmen/env-typescript:qa
     ports:
       - "3000:8000"
     volumes:
       - ./.env:/usr/src/app/.env:ro
-
-
