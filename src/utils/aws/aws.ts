@@ -262,7 +262,7 @@ export function extractAWSKeyFromCoverPhotoUrl(
 export function shouldUseLocalDisk(): boolean {
 	return (
 		process.env.NODE_ENV === "development" ||
-		!process.env.AWS_ACCESS_KEY_ID ||
+		!process.env._ACCESS_KEY_ID ||
 		!process.env.AWS_SECRET_ACCESS_KEY
 	);
 }

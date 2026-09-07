@@ -2,6 +2,9 @@
 node_modules
 
 .env
+.env.*
+!.env.example
+*.log
 dist
 # ignore local files from dev uploads
 src/utils/aws/*

@@ -1,0 +1,71 @@
+# Changed to Mics Credentia
+name: CI/CD Pipeline EMP-Typescript
+
+on:
+   push:
+      branches: [developement]
+   pull_request:
+      branches: [developement]
+
+jobs:
+   build:
+      runs-on: ubuntu-latest
+      steps:
+         - name: Checkout
+           uses: actions/checkout@v3
+
+         - name: Login to DockerHub
+           uses: docker/login-action@v2
+           with:
+              username: ${{ secrets.DOCKERHUB_USERNAME }}
+              password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+         - name: Build and Push
+           uses: docker/build-push-action@v3
+           with:
+              context: .
+              push: true
+              tags: oriontechmen/env-typescript:dev
+
+   deploy:
+      needs: [build]
+      runs-on: ubuntu-latest
+      steps:
+         - uses: actions/checkout@v3
+
+         - name: Deploy to Ec2 Instance
+           uses: appleboy/ssh-action@master
+           with:
+              host: ${{ secrets.HOST }}
+              username: ${{ secrets.USERNAME }}
+              key: ${{ secrets.PRIVATE_KEY }}
+              script: |
+                 sh prune.sh
+                 sudo chmod 666 /var/run/docker.sock
+                 cd environmental-mapping-web-backend-001/
+                 git checkout developement
+                 git fetch origin developement
+                 git reset --hard origin/developement
+
+                 # Create/Overwrite the .env file with current GitHub Secrets
+                 echo "PORT=${{ secrets.PORT }}" > .env
+                 echo "MONGO_URL=${{ secrets.MONGO_URL }}" >> .env
+                 echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+                 echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+                 echo "S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}" >> .env
+                 echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
+                 echo "EMAIL_SERVICE=${{ secrets.EMAIL_SERVICE }}" >> .env
+                 echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}" >> .env
+                 echo "EMAIL_USER=${{ secrets.EMAIL_USER }}" >> .env
+                 echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+                 echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+                 echo "JWT_LIFETIME=${{ secrets.JWT_LIFETIME }}" >> .env
+                 echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+                 echo "JWT_ACCESS_LIFETIME=${{ secrets.JWT_ACCESS_LIFETIME }}" >> .env
+                 echo "EMAIL_VERIFICATION_SECRET=${{ secrets.EMAIL_VERIFICATION_SECRET }}" >> .env
+                 echo "RESET_PASSWORD_SECRET=${{ secrets.RESET_PASSWORD_SECRET }}" >> .env
+
+                 docker-compose -f docker-compose.dev.yml stop
+                 docker-compose -f docker-compose.dev.yml rm -f
+                 docker-compose -f docker-compose.dev.yml pull   
+                 docker-compose -f docker-compose.dev.yml up -d --force-recreate
