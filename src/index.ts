@@ -30,6 +30,8 @@ const app = new App(
 )
 
 
-app.listen();
+if (!process.env.VERCEL) {
+    app.listen();
+}
 
 export default app.app;
