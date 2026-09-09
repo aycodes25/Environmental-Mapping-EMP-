@@ -162,7 +162,6 @@ When running in `development` mode (`NODE_ENV=development`), the application aut
 - **Default Superadmin Email**: `superadmin@mail.com`
 - **Default Superadmin Password**: `superadmin`
 
-
 > [!IMPORTANT]
 > Make sure to update the default credentials immediately in a production environment.
 
