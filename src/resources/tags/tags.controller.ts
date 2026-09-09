@@ -6,8 +6,8 @@ import modelModel from "../models/model.model";
 import { RoleType } from "../users/user.Interface";
 import { AuthUserRequest } from "../../middlewares/auth.middleware";
 import userModel from "../users/user.model";
-// import tagsModel from "./tags.model";
 import { toObjectId, toObjectIdArray } from "../../utils/mongo";
+import notificationService from "../notifications/notification.service";
 
 export class TagController {
 	async addTag(req: AuthUserRequest, res: Response, next: NextFunction) {
@@ -64,6 +64,27 @@ export class TagController {
 				group,
 				rest
 			);
+
+			// --- NOTIFICATION: Tag submitted ---
+			// Notify the tagger (confirmation)
+			if (userId) {
+				notificationService.notifyUser(
+					userId,
+					"Tag submitted",
+					`Your tag has been successfully submitted.`,
+					"Tag",
+					data?._id
+				).catch(() => {});
+			}
+			// Notify reviewers and admins that a new tag needs review
+			notificationService.notifyRoles(
+				[RoleType.reviewer, RoleType.admin, RoleType.superAdmin],
+				"New tag created",
+				`A new tag (${objectName || "item"}) has been submitted and may require review.`,
+				"Tag",
+				data?._id
+			).catch(() => {});
+
 			res.status(200).json({
 				status: "success",
 				data,
@@ -90,6 +111,8 @@ export class TagController {
 				presence,
 				type,
 				action,
+				status,
+				correctionNote,
 			} = req.body;
 			const files = req.files;
 			let imageFile: Express.Multer.File | null = null;
@@ -121,7 +144,37 @@ export class TagController {
 				presence,
 				type,
 				action,
-			});
+				...(status && { status }),
+			}, { new: true });
+
+			// --- NOTIFICATION: Tag status change ---
+			if (status && tag?.user) {
+				if (status === "approved") {
+					notificationService.notifyUser(
+						tag.user.toString(),
+						"Tag approved",
+						`Your tag has been approved by a reviewer.`,
+						"Tag",
+						tag._id
+					).catch(() => {});
+				} else if (status === "correction_requested" || correctionNote) {
+					notificationService.notifyUser(
+						tag.user.toString(),
+						"Correction requested",
+						correctionNote || `Your tag needs a correction. Please review and update.`,
+						"Tag",
+						tag._id
+					).catch(() => {});
+				} else if (status === "rejected") {
+					notificationService.notifyUser(
+						tag.user.toString(),
+						"Tag rejected",
+						`Your tag has been reviewed and was not approved.`,
+						"Tag",
+						tag._id
+					).catch(() => {});
+				}
+			}
 
 			res.status(200).json({
 				message: "tag updated successfully",
@@ -242,11 +295,6 @@ export class TagController {
 
 
 				const safeModelIds = (await modelModel.find({ delete: { $ne: true } }).select('_id').lean()).map(m => m._id);
-
-				let effectiveModelFilter: any = { $in: safeModelIds };
-
-				if (modelIdsForSearch && modelIdsForSearch.length > 0) {
-				}
 
 				const queryWithSafeModels = {
 					...(Object.keys(searchQuery).length > 0 ? searchQuery : {}),
@@ -459,3 +507,4 @@ export class TagController {
 		}
 	}
 }
+

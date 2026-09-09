@@ -193,6 +193,9 @@ export const UploadUserToS3 = async (
 	imageKey: string,
 ): Promise<any> => {
 	try {
+		if (shouldUseLocalDisk()) {
+			return await saveToDisk(imageFile, imageKey);
+		}
 		//  console.log('AWS Access Key:', process.env.AWS_ACCESS_KEY_ID);
 		//  console.log('AWS Secret Access Key:', process.env.AWS_SECRET_ACCESS_KEY);
 		// console.log('S3 Bucket Name:', process.env.S3_BUCKET_NAME);
@@ -262,7 +265,7 @@ export function extractAWSKeyFromCoverPhotoUrl(
 export function shouldUseLocalDisk(): boolean {
 	return (
 		process.env.NODE_ENV === "development" ||
-		!process.env._ACCESS_KEY_ID ||
+		!process.env.AWS_ACCESS_KEY_ID ||
 		!process.env.AWS_SECRET_ACCESS_KEY
 	);
 }

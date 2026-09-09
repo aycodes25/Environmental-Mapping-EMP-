@@ -1,3 +1,4 @@
+if (process.env.NODE_ENV) process.env.NODE_ENV = process.env.NODE_ENV.trim();
 import "dotenv/config";
 import { App } from "./app";
 import { UserRoute } from "./resources/users/user.routes";
@@ -10,6 +11,7 @@ import { Granular } from "./resources/granular/granular.routes";
 import { IncidentRoutes } from "./resources/incident/incident.routes";
 import { FilesRoute } from "./resources/localfile/localfile.router";
 import { FeedbackRoutes } from "./resources/feedback/feedback.routes";
+import { NotificationRoutes } from "./resources/notifications/notification.route";
 const app = new App(
     [
         new UserRoute(),
@@ -21,7 +23,8 @@ const app = new App(
         new Granular(),
         new IncidentRoutes(),
         new FilesRoute(),
-        new FeedbackRoutes()
+        new FeedbackRoutes(),
+        new NotificationRoutes()
     ],
     Number(process.env.PORT)
 )

@@ -1,9 +1,10 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import FeedbackModel, { FeedbackStatus } from "./feedback.model";
 import { AuthUserRequest } from "../../middlewares/auth.middleware";
 import userModel from "../users/user.model";
 import { RoleType } from "../users/user.Interface";
 import { saveToDisk, UploadSampleToS3 } from "../../utils/aws/aws";
+import notificationService from "../notifications/notification.service";
 
 const isSuperAdmin = (role?: RoleType) =>
 	role === RoleType.superAdmin;
@@ -33,7 +34,6 @@ export class FeedbackController {
 			if (file) {
 				const key = `feedback/${userId}/${Date.now()}-${file.originalname}`;
 				const url = await (async () => {
-					// Use disk storage only while developing or when AWS is not configured.
 					const isDevelopment = process.env.NODE_ENV === "development";
 					const hasAWSCredentials =
 						process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
@@ -43,7 +43,6 @@ export class FeedbackController {
 						return saveToDisk(file.buffer, key);
 					}
 
-					// In production we rely solely on S3; let errors bubble up so the client is notified.
 					return UploadSampleToS3(file.buffer, key);
 				})();
 				attachment = {
@@ -58,6 +57,16 @@ export class FeedbackController {
 				message,
 				attachment
 			})).populate("user", "fullname email username role");
+
+			// --- NOTIFICATION: Feedback submitted ---
+			// Notify Super Admin and Admin that new feedback arrived
+			notificationService.notifyRoles(
+				[RoleType.superAdmin, RoleType.admin, RoleType.reviewer],
+				"New feedback received",
+				`New feedback has been submitted and requires attention.`,
+				"Feedback",
+				feedback._id
+			).catch(() => {});
 
 			return res.status(201).json({
 				status: "success",
@@ -146,6 +155,29 @@ export class FeedbackController {
 
 			if (!updated) {
 				return res.status(404).json({ status: "error", message: "Feedback not found" });
+			}
+
+			// --- NOTIFICATION: Feedback resolved/updated ---
+			// Notify the user who submitted the feedback
+			if (updated.user) {
+				const feedbackUserId = (updated.user as any)?._id || updated.user;
+				if (status === FeedbackStatus.resolved) {
+					notificationService.notifyUser(
+						feedbackUserId.toString(),
+						"Feedback resolved",
+						`Your feedback has been marked as resolved.`,
+						"Feedback",
+						updated._id
+					).catch(() => {});
+				} else if (status === FeedbackStatus.reviewed) {
+					notificationService.notifyUser(
+						feedbackUserId.toString(),
+						"Feedback reviewed",
+						`Your feedback is currently being reviewed.`,
+						"Feedback",
+						updated._id
+					).catch(() => {});
+				}
 			}
 
 			return res.status(200).json({
