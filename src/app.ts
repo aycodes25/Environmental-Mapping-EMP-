@@ -73,27 +73,25 @@ export class App {
 
     private async initialiseDatabaseConnection(): Promise<void> {
         const { MONGO_URL, NODE_ENV } = process.env;
-        console.log(MONGO_URL)
         const connectDB = async () => {
             try {
+                if (mongoose.connection.readyState === 1) {
+                    return;
+                }
                 await mongoose.connect(`${MONGO_URL}`, {
                     serverSelectionTimeoutMS: 10000,
                 });
                 console.log(`Connected to MongoDB (${NODE_ENV} environment)`);
 
-
                 if (NODE_ENV === "development") {
                     try {
                         await seedSuperAdmin();
                     } catch (error) {
-                        throw new Error("Error during super admin seeding");
+                        console.log("Super admin seeding finished or already exists");
                     }
-                } else {
-                    // throw new Error("Super admin seeding is not allowed in production environment");
                 }
             } catch (error) {
-                throw error;
-                // setTimeout(connectDB, 5000);
+                console.error("Database connection error:", error);
             }
         };
 

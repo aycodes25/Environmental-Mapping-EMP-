@@ -1,6 +1,6 @@
 import { RoleType } from '../resources/users/user.Interface';
 import { Request, Response, NextFunction } from 'express';
-import jwt, { JwtPayload, Secret } from 'jsonwebtoken'
+import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 
 // Define a custom interface for the user object stored in the request
 interface AuthenticatedUser {
@@ -8,84 +8,86 @@ interface AuthenticatedUser {
     userId: string;
     role: string;
 }
+
 // Extend the Request interface to include the user property
 export interface AuthUserRequest extends Request {
     headers: any;
     user?: AuthenticatedUser;
 }
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET_KEY || ''
-export const authenticateUser = (req: AuthUserRequest, res: Response, next: NextFunction) => {
-
-    // Check if the authorization header contains a token
-    const authHeader = req.rawHeaders.find((items) => items.startsWith('Bearer'));
-
-    if (authHeader && authHeader.startsWith('Bearer')) {
-        const [bearer, token] = authHeader.split(' ');
-
-        if (!token || !token.length) {
-            return res.status(401).json({ message: 'Authenticated users only' });
-        }
-        try {
-            const decodedToken = jwt.verify(token, JWT_SECRET) as JwtPayload;
-            const { username, userId, role } = decodedToken;
-            // Attach the user information to the request object
-            req.user = { username, userId, role } as AuthenticatedUser;
-            if (!decodedToken) {
-                return res.status(401).json({ message: 'Authentication invalid, Please login again, if 2FA is enabled verify your 2FA' });
-            };
-            next();
-        } catch (error) {
-            console.log(error)
-            return res.status(401).json({ message: 'Please login again' });
-        }
-    } else {
-        throw new Error('Please login again');
-    }
-
+const getJwtSecret = (): Secret => {
+    return process.env.JWT_SECRET_KEY || process.env.JWT_SECRET || 'default-secret-key';
 };
 
-export const authenticateUserCheckForAuthorizeTaggers = (req: AuthUserRequest, res: Response) => {
-
-    const authHeader = req.rawHeaders.find((items) => items.startsWith('Bearer'));
-    if (authHeader && authHeader.startsWith('Bearer')) {
-        const [bearer, token] = authHeader.split(' ');
-
-        if (!token.length) {
-            return res.status(401).json({ message: 'Authenticated users only' });
+const extractBearerToken = (req: Request): string | null => {
+    const authHeader = req.headers.authorization || req.headers['authorization'];
+    if (typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+        return authHeader.substring(7).trim();
+    }
+    if (Array.isArray(req.rawHeaders)) {
+        const raw = req.rawHeaders.find((item) => typeof item === 'string' && item.toLowerCase().startsWith('bearer '));
+        if (raw) {
+            return raw.substring(7).trim();
         }
-        try {
-            const decodedToken = jwt.verify(token, JWT_SECRET) as JwtPayload;
-            if (!decodedToken) { return res.status(401).json({ message: 'Authentication invalid, Please login again, if 2FA is enabled verify your 2FA' }) };
+    }
+    return null;
+};
 
-            const { username, userId, role } = decodedToken;
-            // Attach the user information to the request object
-            req.user = { username, userId, role } as AuthenticatedUser;
+export const authenticateUser = (req: AuthUserRequest, res: Response, next: NextFunction) => {
+    const token = extractBearerToken(req);
 
-            req;
-        } catch (error) {
-            return res.status(401).json({ message: 'Please login again' });
-        }
-    } else {
+    if (!token) {
         return res.status(401).json({ message: 'Authenticated users only, Please login' });
     }
 
-
+    try {
+        const secret = getJwtSecret();
+        const decodedToken = jwt.verify(token, secret) as JwtPayload;
+        if (!decodedToken) {
+            return res.status(401).json({ message: 'Authentication invalid, Please login again' });
+        }
+        const { username, userId, role } = decodedToken;
+        req.user = { username, userId, role } as AuthenticatedUser;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: 'Please login again' });
+    }
 };
+
+export const authenticateUserCheckForAuthorizeTaggers = (req: AuthUserRequest, res: Response): AuthUserRequest | null => {
+    const token = extractBearerToken(req);
+    if (!token) {
+        res.status(401).json({ message: 'Authenticated users only, Please login' });
+        return null;
+    }
+
+    try {
+        const secret = getJwtSecret();
+        const decodedToken = jwt.verify(token, secret) as JwtPayload;
+        if (!decodedToken) {
+            res.status(401).json({ message: 'Authentication invalid, Please login again' });
+            return null;
+        }
+
+        const { username, userId, role } = decodedToken;
+        req.user = { username, userId, role } as AuthenticatedUser;
+        return req;
+    } catch (error) {
+        res.status(401).json({ message: 'Please login again' });
+        return null;
+    }
+};
+
 export const authorizeTaggersOrSuperAdmins = (req: Request, res: Response, next: NextFunction) => {
     try {
-        // Check if the user is authenticated
-        const authReq: any = authenticateUserCheckForAuthorizeTaggers(req, res);
-
-        if (!authReq.user) {
-            return res.status(401).json({ message: 'Authentication required, Please login and enable 2FA authentication' });
+        const authReq = authenticateUserCheckForAuthorizeTaggers(req as AuthUserRequest, res);
+        if (!authReq || !authReq.user) {
+            return; // Response already sent
         }
-        // Extract user role from the JWT payload
-        const { role } = authReq.user;
 
-        // Check if the user has the required role (Tagger or SuperAdmin)
-        if (role !== RoleType.tagger || !['superAdmin', 'admin'].includes(role)) {
-            return res.status(401).json({ message: 'Unauthorized to access this route' });
+        const { role } = authReq.user;
+        if (role !== RoleType.tagger && !['superAdmin', 'admin'].includes(role)) {
+            return res.status(403).json({ message: 'Unauthorized to access this route' });
         }
 
         next();
@@ -93,5 +95,3 @@ export const authorizeTaggersOrSuperAdmins = (req: Request, res: Response, next:
         next(error);
     }
 };
-
-
