@@ -51,6 +51,27 @@ export class App {
         this.app.use(express.urlencoded({ extended: false }));
         // this.app.use(compression());
 
+        // Ensure database connection in serverless environment (Vercel)
+        this.app.use(async (req, res, next) => {
+            if (mongoose.connection.readyState === 1) {
+                return next();
+            }
+            try {
+                const { MONGO_URL } = process.env;
+                if (MONGO_URL) {
+                    if (mongoose.connection.readyState === 2) {
+                        await mongoose.connection.asPromise();
+                    } else {
+                        await mongoose.connect(MONGO_URL, {
+                            serverSelectionTimeoutMS: 10000,
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error("Serverless DB connection error:", err);
+            }
+            next();
+        });
     }
     private initialiseControllers(
         controllers: Controller[],
