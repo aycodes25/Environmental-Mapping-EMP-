@@ -12,11 +12,11 @@ import { toObjectId, toObjectIdArray } from "../../utils/mongo";
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: 'us-east-1',
+    region: process.env.AWS_REGION || 'us-east-1',
     apiVersion: '2006-03-01',
     signatureVersion: 'v4',
 });
-const S3_BUCKET_NAME = 'enviromentalmapping';
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'emp-bucket-new';
 
 export const createModel = async (
     modelName: string,

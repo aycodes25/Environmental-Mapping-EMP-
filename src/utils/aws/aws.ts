@@ -6,10 +6,10 @@ import fsPromises from "fs/promises";
 const s3 = new AWS.S3({
 	accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-	region: "us-east-1", // specify your region
+	region: process.env.AWS_REGION || "us-east-1",
 });
 
-const S3_BUCKET_NAME = "emp-bucket-new";
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || "emp-bucket-new";
 
 interface UploadResult {
 	modelUrl: string;
@@ -72,7 +72,7 @@ export const uploadFilesToS3 = async (
 		const s3 = new AWS.S3({
 			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 			secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-			region: "us-east-1",
+			region: process.env.AWS_REGION || "us-east-1",
 		});
 		const modelUploadParams = {
 			Bucket: S3_BUCKET_NAME!,
@@ -122,7 +122,7 @@ export const UploadEvidenceToS3 = async (
 		const s3 = new AWS.S3({
 			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 			secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-			region: "us-east-1",
+			region: process.env.AWS_REGION || "us-east-1",
 		});
 		const UploadParams = {
 			Bucket: S3_BUCKET_NAME!,
@@ -147,7 +147,7 @@ export const UploadGtag = async (
 		const s3 = new AWS.S3({
 			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 			secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-			region: "us-east-1",
+			region: process.env.AWS_REGION || "us-east-1",
 		});
 
 		const UploadParams = {
@@ -172,7 +172,7 @@ export const UploadSampleToS3 = async (
 		const s3 = new AWS.S3({
 			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 			secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-			region: "us-east-1",
+			region: process.env.AWS_REGION || "us-east-1",
 		});
 		const UploadParams = {
 			Bucket: S3_BUCKET_NAME!,
@@ -203,7 +203,7 @@ export const UploadUserToS3 = async (
 		const s3 = new AWS.S3({
 			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 			secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-			region: "us-east-1",
+			region: process.env.AWS_REGION || "us-east-1",
 		});
 		const UploadParams = {
 			Bucket: S3_BUCKET_NAME!,
