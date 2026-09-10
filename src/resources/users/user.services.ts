@@ -14,6 +14,7 @@ import User, { RoleType } from "./user.Interface";
 import locationsModels from "../locations/locations.models";
 import mongoose from "mongoose";
 import { toObjectId } from "../../utils/mongo";
+import notificationService from "../notifications/notification.service";
 dotenv.config();
 
 const s3 = new aws.S3({
@@ -192,6 +193,16 @@ export const signUpTagger = async (
 		});
 		// const verificationToken = await generateVerificationToken(user);
 		// await sendVerifyEmail(user.email, verificationToken)
+
+		// Notify all superAdmins about the new user
+		await notificationService.notifyRole(
+			'superAdmin',
+			'New User Added',
+			`A new ${role} account has been created for ${fullname || username} (${email}).`,
+			'Users',
+			user._id
+		).catch(() => {}); // fire-and-forget - don't block signup
+
 		return user;
 	} catch (err: any) {
 		if (err instanceof mongoose.Error.ValidationError) {
@@ -854,3 +865,4 @@ export async function seedSuperAdmin() {
 		console.error("Error seeding SuperAdmin:", error);
 	}
 }
+

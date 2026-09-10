@@ -9,7 +9,7 @@ const modelSchema = new Schema({
         required: true
     },
     isComplete: { type: Boolean, default: false },
-    file: { type: String, required: true },
+    file: { type: String, required: false },
     size: { type: Number, required: false },
     modelName: { type: String, require: true },
     coverPicture: { type: String },
